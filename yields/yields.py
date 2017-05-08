@@ -269,9 +269,16 @@ class Yields(object):
                     # we need
                     formatted_element = _parse_nomoto_element(mass_number,
                                                               atomic_name)
-                    # We then need to make the interpolation object. Since this
-                    # will be the same at all metallicities, this is easy
+                    # We then need to make the interpolation object. It takes
+                    # the metallicities and the corresponding abundances. We
+                    # also need to fix the extrapolation, so that it retuns
+                    # the values of the nearest model if the metallicity is
+                    # outside the range of the models themselves
+                    fill_values = (these_abundances[0], these_abundances[-1])
+                    # ^ assumes the abundances are in increasing metallicity
                     interp_obj = interpolate.interp1d(log_met_values,
                                                       these_abundances,
-                                                      kind="linear")
+                                                      kind="linear",
+                                                      bounds_error=False,
+                                                      fill_value=fill_values)
                     self._abundances_interp[formatted_element] = interp_obj

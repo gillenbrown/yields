@@ -15,7 +15,7 @@ def test_metals_sum(yields_test_case):
 def test_normalize_metals(yields_test_case):
     """Test whether or not the normalization is working properly"""
     yields_test_case.normalize_metals(1)
-    assert yields_test_case._metals_sum() == 1
+    assert np.isclose(yields_test_case._metals_sum(), 1)
     assert yields_test_case.H_1 == 1.0 / 52.0  # 1 / sum(3..10)
     assert yields_test_case.F_9 == 9.0 / 52.0
     assert yields_test_case.Na_10 == 10.0 / 52.0
@@ -25,7 +25,7 @@ def test_normalize_metals(yields_test_case):
 
     # normalize to a value other than 1
     yields_test_case.normalize_metals(25.0)
-    assert yields_test_case._metals_sum() == 25.0
+    assert np.isclose(yields_test_case._metals_sum(), 25.0)
     assert yields_test_case.H_1 == 25.0 / 52.0  # 1 / sum(1..10)
     assert yields_test_case.F_9 == 9.0 * 25.0 / 52.0
     assert np.isclose(yields_test_case.Na_10, 10.0 * 25.0 / 52.0)
@@ -38,6 +38,8 @@ def test_set_metallicity_error_checking(yields_test_case):
         yields_test_case.set_metallicity(2)
     with pytest.raises(ValueError):
         yields_test_case.set_metallicity(-0.001)
+    with pytest.raises(ValueError):
+        yields_test_case.set_metallicity(1.001)
 
 def test_interpolate_z_test(yields_test_case):
     """Test whether the interpolation is working correctly in the test case
@@ -226,88 +228,100 @@ def test_nomoto_parser():
     assert yields._parse_nomoto_element("30", "Si") == "Si_30"
 
 
-def test_make_nomoto_at_zero_met():
+# create simple object for testing
+@pytest.fixture
+def yields_nomoto():
+    return yields.Yields("nomoto_06_II")
+
+def test_make_nomoto_at_zero_met(yields_nomoto):
     """Test that the Nomoto yields return the correct values. 
     
     I will test at all the given metallicities in the paper, to make sure it 
     works at the values in the table. I will put all the metallicity points
     in the same function, to make sure that is working correctly too."""
-    nomoto_test = yields.Yields("nomoto_06_II")
-    nomoto_test.set_metallicity(0)
-    assert nomoto_test.H_1 == 3.28E-02
-    assert nomoto_test.H_2 == 5.76E-18
-    assert nomoto_test.Si_28 == 8.11E-04
-    assert nomoto_test.Ca_48 == 8.04E-15
-    assert nomoto_test.Zn_64 == 6.32E-07
-    assert nomoto_test.Ge_74 == 1.33E-14
+    yields_nomoto.set_metallicity(0)
+    assert yields_nomoto.H_1 == 3.28E-02
+    assert yields_nomoto.H_2 == 5.76E-18
+    assert yields_nomoto.Si_28 == 8.11E-04
+    assert yields_nomoto.Ca_48 == 8.04E-15
+    assert yields_nomoto.Zn_64 == 6.32E-07
+    assert yields_nomoto.Ge_74 == 1.33E-14
     with pytest.raises(AttributeError):
-        nomoto_test.U_135
+        yields_nomoto.U_135
 
-    nomoto_test.set_metallicity(0.001)
-    assert nomoto_test.H_1 == 3.14E-02
-    assert nomoto_test.H_2 == 2.21E-15
-    assert nomoto_test.Si_28 == 7.09E-04
-    assert nomoto_test.Ca_48 == 6.91E-10
-    assert nomoto_test.Zn_64 == 5.74E-07
-    assert nomoto_test.Ge_74 == 2.18E-08
+    yields_nomoto.set_metallicity(0.001)
+    assert yields_nomoto.H_1 == 3.14E-02
+    assert yields_nomoto.H_2 == 2.21E-15
+    assert yields_nomoto.Si_28 == 7.09E-04
+    assert yields_nomoto.Ca_48 == 6.91E-10
+    assert yields_nomoto.Zn_64 == 5.74E-07
+    assert yields_nomoto.Ge_74 == 2.18E-08
     with pytest.raises(AttributeError):
-        nomoto_test.U_135
+        yields_nomoto.U_135
 
-    nomoto_test.set_metallicity(0.004)
-    assert nomoto_test.H_1 == 2.96E-02
-    assert nomoto_test.H_2 == 1.97E-16
-    assert nomoto_test.Si_28 == 6.17E-04
-    assert nomoto_test.Ca_48 == 2.93E-09
-    assert nomoto_test.Zn_64 == 5.07E-07
-    assert nomoto_test.Ge_74 == 1.35E-07
+    yields_nomoto.set_metallicity(0.004)
+    assert yields_nomoto.H_1 == 2.96E-02
+    assert yields_nomoto.H_2 == 1.97E-16
+    assert yields_nomoto.Si_28 == 6.17E-04
+    assert yields_nomoto.Ca_48 == 2.93E-09
+    assert yields_nomoto.Zn_64 == 5.07E-07
+    assert yields_nomoto.Ge_74 == 1.35E-07
     with pytest.raises(AttributeError):
-        nomoto_test.U_135
+        yields_nomoto.U_135
 
-    nomoto_test.set_metallicity(0.02)
-    assert nomoto_test.H_1 == 2.45E-02
-    assert nomoto_test.H_2 == 5.34E-16
-    assert nomoto_test.Si_28 == 4.55E-04
-    assert nomoto_test.Ca_48 == 1.07E-08
-    assert nomoto_test.Zn_64 == 4.43E-07
-    assert nomoto_test.Ge_74 == 7.93E-07
+    yields_nomoto.set_metallicity(0.02)
+    assert yields_nomoto.H_1 == 2.45E-02
+    assert yields_nomoto.H_2 == 5.34E-16
+    assert yields_nomoto.Si_28 == 4.55E-04
+    assert yields_nomoto.Ca_48 == 1.07E-08
+    assert yields_nomoto.Zn_64 == 4.43E-07
+    assert yields_nomoto.Ge_74 == 7.93E-07
     with pytest.raises(AttributeError):
-        nomoto_test.U_135
+        yields_nomoto.U_135
 
-def test_make_nomoto_interpolation_range():
+def test_make_nomoto_interpolation_range(yields_nomoto):
     """Tests that the interpolation is returning values in the range we need."""
     # first just test that the values are in the right range (ie between the
     # abundances of the metallicities that span the metallicity used.
-    nomoto_test = yields.Yields("nomoto_06_II")
-    nomoto_test.set_metallicity(0.002)
-    assert 3.14E-2 > nomoto_test.H_1 > 2.96E-2
-    assert 7.09E-4 > nomoto_test.Si_28 > 6.17E-4
-    assert 3.34E-5 > nomoto_test.Ca_40 > 3.02E-5
+    yields_nomoto.set_metallicity(0.002)
+    assert 3.14E-2 > yields_nomoto.H_1 > 2.96E-2
+    assert 7.09E-4 > yields_nomoto.Si_28 > 6.17E-4
+    assert 3.34E-5 > yields_nomoto.Ca_40 > 3.02E-5
 
     # try a different metallicity value
-    nomoto_test.set_metallicity(0.01)
-    assert 2.96E-2 > nomoto_test.H_1 > 2.45E-2
-    assert 6.17E-4 > nomoto_test.Si_28 > 4.55E-4
-    assert 3.02E-5 > nomoto_test.Ca_40 > 2.39E-5
+    yields_nomoto.set_metallicity(0.01)
+    assert 2.96E-2 > yields_nomoto.H_1 > 2.45E-2
+    assert 6.17E-4 > yields_nomoto.Si_28 > 4.55E-4
+    assert 3.02E-5 > yields_nomoto.Ca_40 > 2.39E-5
 
-def test_make_nomoto_interpolation_values():
+def test_make_nomoto_interpolation_values(yields_nomoto):
     """Tests that the interpolation is working correctly by directly testing 
        values, not just checking their range."""
-    nomoto_test = yields.Yields("nomoto_06_II")
     # I want to get a metallicity directly in between in log space, which can
     # be gotten using the logspace function
     middle = np.logspace(yields._metallicity_log(0),
                          yields._metallicity_log(0.001), 3)[1]  # get middle val
-    nomoto_test.set_metallicity(middle)
-    assert np.isclose(nomoto_test.H_1, np.mean([3.28E-2, 3.14E-2]))
-    assert np.isclose(nomoto_test.Ca_46, np.mean([5.69E-14, 2.06E-10]))
-    assert np.isclose(nomoto_test.Ge_74, np.mean([1.33E-14, 2.18E-8]))
+    yields_nomoto.set_metallicity(middle)
+    assert np.isclose(yields_nomoto.H_1, np.mean([3.28E-2, 3.14E-2]))
+    assert np.isclose(yields_nomoto.Ca_46, np.mean([5.69E-14, 2.06E-10]))
+    assert np.isclose(yields_nomoto.Ge_74, np.mean([1.33E-14, 2.18E-8]))
 
     # then repeat for a different metallicity
     middle = np.logspace(yields._metallicity_log(0.004),
                          yields._metallicity_log(0.02), 3)[1]  # get middle val
-    nomoto_test.set_metallicity(middle)
-    assert np.isclose(nomoto_test.H_1, np.mean([2.96E-2, 2.45E-2]))
-    assert np.isclose(nomoto_test.Ca_46, np.mean([8.71E-10, 3.60E-9]))
-    assert np.isclose(nomoto_test.Ge_74, np.mean([1.35E-7, 7.93E-7]))
+    yields_nomoto.set_metallicity(middle)
+    assert np.isclose(yields_nomoto.H_1, np.mean([2.96E-2, 2.45E-2]))
+    assert np.isclose(yields_nomoto.Ca_46, np.mean([8.71E-10, 3.60E-9]))
+    assert np.isclose(yields_nomoto.Ge_74, np.mean([1.35E-7, 7.93E-7]))
 
-# TODO: test metallicity outside that of the range
+def test_metallicity_outside_range_nomoto(yields_nomoto):
+    """Tests what happens when the metallicity is outside the range the 
+    models span. I will assert that it should be the same as the yields of the
+    model that is at the extreme. """
+    yields_nomoto.set_metallicity(0.99)
+    assert yields_nomoto.H_1 == 2.45E-2
+    assert yields_nomoto.H_2 == 5.34E-16
+    assert yields_nomoto.O_16 == 6.14E-3
+    assert yields_nomoto.Al_27 == 6.53E-5
+    assert yields_nomoto.Fe_58 == 2.15E-6
+    assert yields_nomoto.Fe_54 == 1.13E-5
