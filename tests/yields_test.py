@@ -16,21 +16,21 @@ def test_normalize_metals(yields_test_case):
     """Test whether or not the normalization is working properly"""
     yields_test_case.normalize_metals(1)
     assert np.isclose(yields_test_case._metals_sum(), 1)
-    assert yields_test_case.H_1 == 1.0 / 52.0  # 1 / sum(3..10)
-    assert yields_test_case.F_9 == 9.0 / 52.0
-    assert yields_test_case.Na_10 == 10.0 / 52.0
+    assert np.isclose(yields_test_case.H_1, 1.0 / 52.0)  # 1 / sum(3..10)
+    assert np.isclose(yields_test_case.F_9, 9.0 / 52.0)
+    assert np.isclose(yields_test_case.Na_10, 10.0 / 52.0)
     # the total amount must be larger than the amount of metals we normalized 
     # to, since H and He are included. 
-    assert sum(yields_test_case._abundances.values()) > 1.0
+    assert sum(yields_test_case.abundances.values()) > 1.0
 
     # normalize to a value other than 1
     yields_test_case.normalize_metals(25.0)
     assert np.isclose(yields_test_case._metals_sum(), 25.0)
-    assert yields_test_case.H_1 == 25.0 / 52.0  # 1 / sum(1..10)
-    assert yields_test_case.F_9 == 9.0 * 25.0 / 52.0
+    assert np.isclose(yields_test_case.H_1, 25.0 / 52.0) # 1 / sum(1..10)
+    assert np.isclose(yields_test_case.F_9, 9.0 * 25.0 / 52.0)
     assert np.isclose(yields_test_case.Na_10, 10.0 * 25.0 / 52.0)
     # that one required isclose for whatever reason. 
-    assert sum(yields_test_case._abundances.values()) > 25.0
+    assert sum(yields_test_case.abundances.values()) > 25.0
 
 def test_set_metallicity_error_checking(yields_test_case):
     """Metallicities are only vaild between zero and one."""
@@ -61,9 +61,9 @@ def test_interpolate_z_test(yields_test_case):
 
     # then test a point halfway in between in log space. This is a little weird,
     # since 0 is at -4 in log space according to my definition. So halfway
-    # between -4 and 0=log(1) in log space is log(x) = -2. The resulting
+    # between -46and 0=log(1) in log space is log(x) = -3. The resulting
     # value should be atomic number + 0.5
-    yields_test_case.set_metallicity(10**-2)
+    yields_test_case.set_metallicity(10**-3)
     assert yields_test_case.H_1 == 1.5
     assert yields_test_case.F_9 == 9.5
     assert yields_test_case.Na_10 == 10.5
@@ -199,7 +199,7 @@ def test_make_iwamoto_cdd2():
 def test_met_log():
     """Tests the metallicity log function. Is just like log, but returns a
     fixed value for 0."""
-    assert yields._metallicity_log(0) == -4
+    assert yields._metallicity_log(0) == -6
     assert yields._metallicity_log(1) == 0
     assert yields._metallicity_log(0.01) == -2
     assert yields._metallicity_log(100) == 2
@@ -325,3 +325,584 @@ def test_metallicity_outside_range_nomoto(yields_nomoto):
     assert yields_nomoto.Al_27 == 6.53E-5
     assert yields_nomoto.Fe_58 == 2.15E-6
     assert yields_nomoto.Fe_54 == 1.13E-5
+
+def test_metallicity_sums(yields_nomoto):
+    for Z in [0, 0.001, 0.3, 0.5, 0.9]:
+        yields_nomoto.set_metallicity(Z)
+        calciums = [value for key, value in yields_nomoto.abundances.items()
+                    if "Ca_" in key]
+        assert np.isclose(np.sum(calciums), yields_nomoto.Ca)
+
+        sodiums = [value for key, value in yields_nomoto.abundances.items()
+                   if "Na_" in key]
+        assert np.isclose(np.sum(sodiums), yields_nomoto.Na)
+
+
+def test_metallicity_sums_with_normalization(yields_nomoto):
+    yields_nomoto.normalize_metals(100000)
+    for Z in [0, 0.001, 0.3, 0.5, 0.9]:
+        yields_nomoto.set_metallicity(Z)
+        calciums = [value for key, value in yields_nomoto.abundances.items()
+                    if "Ca_" in key]
+        assert np.isclose(np.sum(calciums), yields_nomoto.Ca)
+
+        sodiums = [value for key, value in yields_nomoto.abundances.items()
+                   if "Na_" in key]
+        assert np.isclose(np.sum(sodiums), yields_nomoto.Na)
+
+def test_parse_nomoto_individual_element():
+    """Test whether this parsing works for everything"""
+    assert yields._parse_nomoto_individual_element("p") == "H_1"
+    assert yields._parse_nomoto_individual_element("d") == "H_2"
+    assert yields._parse_nomoto_individual_element("3He") == "He_3"
+    assert yields._parse_nomoto_individual_element("18O") == "O_18"
+    assert yields._parse_nomoto_individual_element("28Si") == "Si_28"
+
+def test_individual_nomoto_mass_13():
+    individual = yields.Yields("nomoto_06_II_13")
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 5.79E-8
+    assert individual.Ga_71 == 8.53E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 1.07E-1
+    assert individual.Si_30 == 1.85E-3
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 3.85E-1
+    assert individual.Ca_40 == 3.91E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 4.28E-10
+    assert individual.Al_26 == 2.13E-5
+
+def test_individual_nomoto_mass_18():
+    individual = yields.Yields("nomoto_06_II_18")
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 4.63E-6
+    assert individual.Ga_71 == 1.84E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 1.29E-1
+    assert individual.Si_30 == 5.34E-4
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 5.21E-1
+    assert individual.Ca_40 == 6.12E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 6.41E-10
+    assert individual.Al_26 == 3.69E-5
+
+def test_individual_nomoto_mass_25():
+    individual = yields.Yields("nomoto_06_II_25")
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 6.75E-7
+    assert individual.Ga_71 == 2.24E-13
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 2.15E-1
+    assert individual.Si_30 == 2.75E-4
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 2.20
+    assert individual.Ca_40 == 3.77E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 6.77E-10
+    assert individual.Al_26 == 8.67E-5
+
+def test_individual_nomoto_mass_40():
+    individual = yields.Yields("nomoto_06_II_40")
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 2.13E-7
+    assert individual.Ga_71 == 1.36E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 7.37E-2
+    assert individual.Si_30 == 1.01E-2
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 7.96
+    assert individual.Ca_40 == 2.83E-2
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 3.22E-14
+    assert individual.Al_26 == 6.64E-5
+
+def test_nomoto_hn_20():
+    individual = yields.Yields("nomoto_06_II_20_hn")
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 4.76E-5
+    assert individual.B_10 == 1.95E-19
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 8.43
+    assert individual.Ne_20 == 4.56E-1
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 1.78E-3
+    assert individual.P_31 == 4.68E-4
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 9.80E-1
+    assert individual.Al_26 == 1.81E-5
+
+
+def test_nomoto_hn_25():
+    individual = yields.Yields("nomoto_06_II_25_hn")
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.11E-4
+    assert individual.B_10 == 7.45E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 9.80
+    assert individual.Ne_20 == 1.05
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 2.27E-3
+    assert individual.P_31 == 5.29E-4
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 2.18
+    assert individual.Al_26 == 6.23E-5
+
+
+def test_nomoto_hn_30():
+    individual = yields.Yields("nomoto_06_II_30_hn")
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.06E-4
+    assert individual.B_10 == 1.05E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 1.10E1
+    assert individual.Ne_20 == 1.04
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 4.86E-3
+    assert individual.P_31 == 1.35E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 2.74
+    assert individual.Al_26 == 4.84E-5
+
+
+def test_nomoto_hn_40():
+    individual = yields.Yields("nomoto_06_II_40_hn")
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.56E-5
+    assert individual.B_10 == 9.41E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 1.29E1
+    assert individual.Ne_20 == 1.83E-1
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 6.63E-3
+    assert individual.P_31 == 2.00E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 7.05
+    assert individual.Al_26 == 9.70E-5
+
+def test_nomoto_error_checking():
+    with pytest.raises(ValueError):
+        yields.Yields("nomoto_06_II_12_hn")
+    with pytest.raises(ValueError):
+        yields.Yields("nomoto_06_II_19")
+    with pytest.raises(ValueError):
+        yields.Yields("nomoto_06_12")
+
+# ----------------------------------------------------------
+
+# Testing WW 95
+
+# ----------------------------------------------------------
+
+def test_ww_individual_11():
+    individual = yields.Yields("ww_95_II_11A")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 1.36E-1
+    assert individual.H_1 == 5.59
+    assert individual.Si_28 == 2.17E-2
+
+def test_ww_individual_12():
+    individual = yields.Yields("ww_95_II_12A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.18E-7
+    assert individual.Mg_26 == 1.69E-3
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 1.45E-1
+    assert individual.Ar_40 == 1.16E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 3.33E-4
+    assert individual.Ti_44 == 6.13E-5
+
+    individual.set_metallicity(10**-4 * 0.02)
+    assert individual.Co_55 == 1.99E-4
+    assert individual.Ga_67 == 3.72E-9
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 7.92E-8
+    assert individual.Fe_54 == 3.35E-4
+
+def test_ww_individual_13():
+    individual = yields.Yields("ww_95_II_13A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 1.98E-7
+    assert individual.Mg_26 == 3.40E-3
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 2.90E-1
+    assert individual.Ar_40 == 1.45E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 4.36E-4
+    assert individual.Ti_44 == 6.40E-5
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 2.65E-4
+    assert individual.Ga_67 == 3.86E-9
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 1.25E-7
+    assert individual.Fe_54 == 5.40E-4
+
+def test_ww_individual_15():
+    individual = yields.Yields("ww_95_II_15A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.07E-7
+    assert individual.Mg_26 == 6.50E-3
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 5.55E-1
+    assert individual.Ar_40 == 2.05E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 5.43E-4
+    assert individual.Ti_44 == 9.06E-5
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 1.53E-4
+    assert individual.Ga_67 == 5.33E-9
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 2.93E-7
+    assert individual.Fe_54 == 7.42E-4
+
+def test_ww_individual_18():
+    individual = yields.Yields("ww_95_II_18A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.73E-7
+    assert individual.Mg_26 == 9.85E-3
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 9.94E-1
+    assert individual.Ar_40 == 2.96E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 6.24E-4
+    assert individual.Ti_44 == 4.95E-5
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 5.23E-4
+    assert individual.Ga_67 == 5.58E-9
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 1.61E-14
+    assert individual.Fe_54 == 1.09E-20
+
+def test_ww_individual_19():
+    individual = yields.Yields("ww_95_II_19A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.51E-7
+    assert individual.Mg_26 == 1.14E-2
+
+def test_ww_individual_20():
+    individual = yields.Yields("ww_95_II_20A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.51E-7
+    assert individual.Mg_26 == 1.05E-2
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 1.52
+    assert individual.Ar_40 == 3.58E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 6.81E-4
+    assert individual.Ti_44 == 1.24E-5
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 5.23E-4
+    assert individual.Ga_67 == 1.78E-10
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 2.14E-14
+    assert individual.Fe_54 == 1.13E-23
+
+def test_ww_individual_22():
+    individual = yields.Yields("ww_95_II_22A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.17E-7
+    assert individual.Mg_26 == 1.28E-2
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 2.12
+    assert individual.Ar_40 == 3.48E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 7.77E-4
+    assert individual.Ti_44 == 1.46E-5
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 4.71E-4
+    assert individual.Ga_67 == 1.06E-9
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 1.71E-6
+    assert individual.Fe_54 == 2.52E-3
+
+def test_ww_individual_25():
+    individual = yields.Yields("ww_95_II_25A")
+
+    individual.set_metallicity(0.02)
+    assert individual.Li_7 == 2.40E-7
+    assert individual.Mg_26 == 3.25E-2
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 2.90
+    assert individual.Ar_40 == 3.92E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.N_14 == 9.29E-4
+    assert individual.Ti_44 == 1.11E-4
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Co_55 == 5.20E-4
+    assert individual.Ga_67 == 1.71E-8
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 8.42E-13
+    assert individual.Fe_54 == 1.56E-17
+
+def test_ww_individual_25B():
+    individual = yields.Yields("ww_95_II_25B")
+
+    individual.set_metallicity(0)
+    assert individual.Cl_36 == 9.00E-7
+    assert individual.Fe_54 == 2.69E-3
+
+def test_ww_individual_30A():
+    individual = yields.Yields("ww_95_II_30A")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 3.65
+    assert individual.Ca_41 == 3.42E-6
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 4.11
+    assert individual.Ar_40 == 9.67E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.07E-4
+    assert individual.Ge_65 == 2.49E-22
+
+    individual.set_metallicity(10**-4 * 0.02)
+    assert individual.Ca_43 == 1.45E-10
+    assert individual.Co_61 == 3.18E-10
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 1.09E-1
+    assert individual.Al_26 == 6.24E-11
+
+def test_ww_individual_30B():
+    individual = yields.Yields("ww_95_II_30B")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 4.88
+    assert individual.Ca_41 == 1.25E-5
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 4.42
+    assert individual.Ar_40 == 9.52E-7
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.17E-4
+    assert individual.Ge_65 == 5.89E-22
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 4.59E-8
+    assert individual.Co_61 == 4.61E-10
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 3.48E-1
+    assert individual.Al_26 == 5.92E-5
+
+def test_ww_individual_35A():
+    individual = yields.Yields("ww_95_II_35A")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 3.07
+    assert individual.Ca_41 == 3.60E-6
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 3.10
+    assert individual.Ar_40 == 1.04E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.21E-4
+    assert individual.Ge_65 == 8.56E-24
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 2.50E-9
+    assert individual.Co_61 == 5.46E-10
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 9.79E-10
+    assert individual.Al_26 == 7.38E-15
+
+def test_ww_individual_35B():
+    individual = yields.Yields("ww_95_II_35B")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 5.82
+    assert individual.Ca_41 == 4.20E-6
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 5.78
+    assert individual.Ar_40 == 1.47E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.32E-4
+    assert individual.Ge_65 == 3.28E-23
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 2.80E-9
+    assert individual.Co_61 == 1.09E-9
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 3.49E-1
+    assert individual.Al_26 == 6.32E-6
+
+def test_ww_individual_35C():
+    individual = yields.Yields("ww_95_II_35C")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 6.36
+    assert individual.Ca_41 == 1.46E-5
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 5.98
+    assert individual.Ar_40 == 1.45E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.35E-4
+    assert individual.Ge_65 == 9.04E-18
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 4.66E-7
+    assert individual.Co_61 == 1.29E-9
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 4.04E-1
+    assert individual.Al_26 == 9.51E-5
+
+def test_ww_individual_40A():
+    individual = yields.Yields("ww_95_II_40A")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 2.36
+    assert individual.Ca_41 == 3.54E-6
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 2.72
+    assert individual.Ar_40 == 1.16E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.32E-4
+    assert individual.Ge_65 == 2.59E-24
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 6.92E-12
+    assert individual.Co_61 == 2.22E-11
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 5.89E-10
+    assert individual.Al_26 == 8.12E-15
+
+def test_ww_individual_40B():
+    individual = yields.Yields("ww_95_II_40B")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 6.03
+    assert individual.Ca_41 == 4.28E-6
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 6.25
+    assert individual.Ar_40 == 2.38E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.33E-4
+    assert individual.Ge_65 == 1.99E-23
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 7.37E-11
+    assert individual.Co_61 == 8.74E-10
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 2.85E-1
+    assert individual.Al_26 == 1.32E-9
+
+def test_ww_individual_40C():
+    individual = yields.Yields("ww_95_II_40C")
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 7.63
+    assert individual.Ca_41 == 1.97E-5
+
+    individual.set_metallicity(0.002)
+    assert individual.O_16 == 7.15
+    assert individual.Ar_40 == 2.36E-6
+
+    individual.set_metallicity(0.0002)
+    assert individual.Fe_56 == 1.56E-4
+    assert individual.Ge_65 == 3.74E-23
+
+    individual.set_metallicity(10 ** -4 * 0.02)
+    assert individual.Ca_43 == 6.05E-7
+    assert individual.Co_61 == 9.71E-10
+
+    individual.set_metallicity(0)
+    assert individual.C_12 == 4.82E-1
+    assert individual.Al_26 == 1.50E-4
+
+def test_ww_error_checking():
+    with pytest.raises(ValueError):
+        yields.Yields("ww_95_II_12")
+    with pytest.raises(ValueError):
+        yields.Yields("ww_95_II_12B")
+    with pytest.raises(ValueError):
+        yields.Yields("ww_95_II_16A")
+    with pytest.raises(ValueError):
+        yields.Yields("ww_95_II_40D")
+
+# TODO: handle the cases better for the ww95 models that only have one
+#       metallicity
