@@ -8,14 +8,14 @@ def yields_test_case():
     return yields.Yields("test")
 
 def test_metals_sum(yields_test_case):
-    assert yields_test_case._metals_sum() == 55 - 3  # sum(3..10)
+    assert yields_test_case.metals_sum() == 55 - 3  # sum(3..10)
     # this is because the test has elements 1 to 10, with an abundance of 1 to
     # 10, and we exclude H and He
 
 def test_normalize_metals(yields_test_case):
     """Test whether or not the normalization is working properly"""
     yields_test_case.normalize_metals(1)
-    assert np.isclose(yields_test_case._metals_sum(), 1)
+    assert np.isclose(yields_test_case.metals_sum(), 1)
     assert np.isclose(yields_test_case.H_1, 1.0 / 52.0)  # 1 / sum(3..10)
     assert np.isclose(yields_test_case.F_9, 9.0 / 52.0)
     assert np.isclose(yields_test_case.Na_10, 10.0 / 52.0)
@@ -25,7 +25,7 @@ def test_normalize_metals(yields_test_case):
 
     # normalize to a value other than 1
     yields_test_case.normalize_metals(25.0)
-    assert np.isclose(yields_test_case._metals_sum(), 25.0)
+    assert np.isclose(yields_test_case.metals_sum(), 25.0)
     assert np.isclose(yields_test_case.H_1, 25.0 / 52.0) # 1 / sum(1..10)
     assert np.isclose(yields_test_case.F_9, 9.0 * 25.0 / 52.0)
     assert np.isclose(yields_test_case.Na_10, 10.0 * 25.0 / 52.0)
@@ -210,13 +210,13 @@ def test_normalization_stability(yields_test_case):
     yields_test_case.set_metallicity(0)
     total_metals = 10
     yields_test_case.normalize_metals(total_metals)
-    assert np.isclose(yields_test_case._metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.metals_sum(), total_metals)
     # then change the metallicity
     yields_test_case.set_metallicity(0.2)
-    assert np.isclose(yields_test_case._metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.metals_sum(), total_metals)
     # then do it again
     yields_test_case.set_metallicity(1)
-    assert np.isclose(yields_test_case._metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.metals_sum(), total_metals)
 
 def test_nomoto_parser():
     """Test the funciton that takes the name and element from the Nomoto file
@@ -903,6 +903,25 @@ def test_ww_error_checking():
         yields.Yields("ww_95_II_16A")
     with pytest.raises(ValueError):
         yields.Yields("ww_95_II_40D")
+
+def test_mass_fractions():
+    """This is harder to test, but we can use the WW tables that report 
+    the total mass, H, and He mass, so I can calculate this manually to
+    check. """
+
+    # some of these need larger error ranges, since calculating the total metals
+    # directly from the table isn't as accurate as the real calculation here,
+    # since I'm simply taking ejecta - H - He.
+    mod = yields.Yields("ww_95_II_40C")
+    assert np.isclose(mod.mass_fraction("Li_7", 0.002), 1.413E-8)
+    assert np.isclose(mod.mass_fraction("Fe", 0.002), 0.0013, atol=0.0001)
+    assert np.isclose(mod.mass_fraction("O_16", 10**-4*0.02), 0.665, atol=0.01)
+    assert np.isclose(mod.mass_fraction("Ne_20", 0), 0.143, atol=0.001)
+    assert np.isclose(mod.mass_fraction("Al", 0), 5.3E-4, atol=0.1E-4)
+
+    mod = yields.Yields("ww_95_II_11A")
+    assert np.isclose(mod.mass_fraction("Li_7", 0.02), 5.19E-7)
+    assert np.isclose(mod.mass_fraction("N", 0.02), 0.087, atol=0.001)
 
 # TODO: handle the cases better for the ww95 models that only have one
 #       metallicity

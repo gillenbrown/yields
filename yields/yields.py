@@ -8,6 +8,11 @@ iwamoto_file = "iwamoto_99_Ia_yields.txt"
 
 nomoto_file = "nomoto_06_imf_weighted_II.txt"
 
+my_nomoto_ave_file = "nomoto_06_imf_weighted_II_my_ave.txt"
+my_nomoto_hn_file = "nomoto_06_imf_weighted_II_my_hn.txt"
+my_nomoto_reg_file = "nomoto_06_imf_weighted_II_my_no_hn.txt"
+my_ww_file = "ww_95_imf_weighted_II.txt"
+
 nomoto_ind_0 = "nomoto_individual/z_0.txt"
 nomoto_ind_0_001 = "nomoto_individual/z_0.001.txt"
 nomoto_ind_0_004 = "nomoto_individual/z_0.004.txt"
@@ -115,6 +120,17 @@ def _metallicity_log(value):
     else:
         return np.log10(value)
 
+# store the known metallicity values
+z_values_nomoto = [0, 0.001, 0.004, 0.02]
+# to interpolate we need the log of that
+log_z_nomoto = [_metallicity_log(z) for z in z_values_nomoto]
+
+# we know the metallicity of the models WW95 used
+z_sun = 0.02
+z_values_ww = [0, (10**-4) * z_sun, 0.01 * z_sun, 0.1 * z_sun, z_sun]
+# to interpolate we need the log of that
+log_z_ww = [_metallicity_log(z) for z in z_values_ww]
+
 
 class Yields(object):
     """Class containing yields from supernovae"""
@@ -132,6 +148,10 @@ class Yields(object):
         # store the model set the user is using
         self.model_set = model_set
 
+        # also store the default point of metallicity (this will actally be
+        # filled in by the models when they are used
+        self.metallicity_points = []
+
         # then we can initialize the model set they are using.
         if model_set == "test":
             self.make_test()
@@ -139,6 +159,20 @@ class Yields(object):
             self.make_iwamoto_99_Ia(_parse_iwamoto_model(model_set))
         elif model_set == "nomoto_06_II":
             self.make_nomoto_06_II()
+        elif "imf" in model_set:
+            if "nomoto" in model_set:
+                if "ave" in model_set:
+                    self.make_imf_integrated(my_nomoto_ave_file)
+                elif "no_hn" in model_set:
+                    self.make_imf_integrated(my_nomoto_reg_file)
+                elif "hn" in model_set:
+                    self.make_imf_integrated(my_nomoto_hn_file)
+                else:
+                    raise ValueError("Not recognized.")
+            elif "ww_95" in model_set:
+                self.make_imf_integrated(my_ww_file)
+
+
         elif model_set.startswith("nomoto_06_II"):
             if "hn" in model_set:
                 mass = model_set[-5:-3]
@@ -162,7 +196,10 @@ class Yields(object):
         self.set_metallicity(0, initial=True)
 
         # we then want to keep track of the initial total metals
-        self.total_metals = self._metals_sum()
+        self.total_metals = self.metals_sum()
+
+        # then create the mass fraction objects
+        self._create_mass_fractions()
 
 
 
@@ -227,7 +264,7 @@ class Yields(object):
             # element + "_" is needed to that "H" doesn't match with "He".
             self.abundances[element] = np.sum(this_element)
 
-    def _metals_sum(self):
+    def metals_sum(self):
         """Gets the sum of the metals in the yields. This includes everything 
         other than H and He."""
         total_metals = 0
@@ -244,7 +281,7 @@ class Yields(object):
         :type total_metals: float
         """
         # first get the original sum of metals, so we know
-        total_before = self._metals_sum()
+        total_before = self.metals_sum()
         scale_factor = total_metals / total_before
         for key in self.abundances:
             self.abundances[key] *= scale_factor
@@ -256,8 +293,65 @@ class Yields(object):
 
         self.has_normalization = True
 
+    def _create_mass_fractions(self):
+        """Creates a dictionary of mass fraction interpolation objects that
+        can be called at any metallicity. 
+        
+        The values here are the fraction of metals that a given isotope makes
+        up. It's mass(isotope) / total_metals."""
+
+        # store the initial metallicity, so we can restore that when we're done
+        initial_z = self.metallicity
+
+        # first create the dictionary. We have one that is under the hood, and
+        # holds the objects where the interpolation is done in log Z space
+        self._mass_fractions_log_z = dict()
+
+        # need the log of the model's z vals to interpolate with later
+        log_z_vals = [_metallicity_log(z) for z in self.metallicity_points]
+
+        temp_mass_frac_storage = defaultdict(list)
+        for z in self.metallicity_points:
+            self.set_metallicity(z)
+            tot_metals = self.metals_sum()
+            # need to do this for all elements
+            for isotope in self.abundances:
+                # to calculate the mass fraction, we divide the mass of this
+                # isotope by the total mass in metals
+                this_frac = self.abundances[isotope] / tot_metals
+                temp_mass_frac_storage[isotope].append(this_frac)
+
+
+        # then create the interpolation object
+        for isotope in temp_mass_frac_storage:
+            mass_fractions = temp_mass_frac_storage[isotope]
+            fill_values = (mass_fractions[0], mass_fractions[-1])
+            # ^ assumes the abundances are in increasing metallicity
+            # we want to interpolate in log(Z) space, so the actual
+            # interpolation is done in this way
+            interp_obj = interpolate.interp1d(log_z_vals,
+                                              mass_fractions,
+                                              kind="linear",
+                                              bounds_error=False,
+                                              fill_value=fill_values)
+            self._mass_fractions_log_z[isotope] = interp_obj
+
+        # then restore the metallicity
+        self.set_metallicity(initial_z)
+
+    def mass_fraction(self, isotope, metallicity):
+        """Get the mass fraction for a particular isotope. """
+
+        # this needs to be done because the function that does the interpolation
+        # inteprolates in log(Z) space, but the user won't want to mess with
+        # that, so we have to transform the metallicity before calling it.
+        # That's all we do here.
+        log_z = _metallicity_log(metallicity)
+        return self._mass_fractions_log_z[isotope](log_z)
+
     def make_test(self):
         # totally arbitrary values for testing
+        self.metallicity_points = [0, 1]
         metallicities = [_metallicity_log(0), _metallicity_log(1)]
         self._abundances_interp["H_1"] = interpolate.interp1d(metallicities,
                                                               [1, 2])
@@ -289,6 +383,7 @@ class Yields(object):
                       "W70", "WDD1", "WDD2", "WDD3", "CDD1", "CDD2". The "W7" 
                       model is typically the one that is used the most.
         """
+        self.metallicity_points = [0, 1]
         # get the index of the correct column
         column_idxs = {"W7":2, "W70":3, "WDD1":4, "WDD2":5, "WDD3":6, 
                        "CDD1":7, "CDD2":8}
@@ -319,11 +414,7 @@ class Yields(object):
 
     def make_nomoto_06_II(self):
         """Populates the model with the yields from the Nomoto 2006 models"""
-
-        # we know the metallicity of the models Nomoto used
-        metallicity_values = [0, 0.001, 0.004, 0.02]
-        # to interpolate we need the log of that
-        log_met_values = [_metallicity_log(met) for met in metallicity_values]
+        self.metallicity_points = z_values_nomoto
 
         # then iterate through each line and handle it appropriately
         with open(_get_data_path(nomoto_file), "r") as in_file:
@@ -349,7 +440,7 @@ class Yields(object):
                     # outside the range of the models themselves
                     fill_values = (these_abundances[0], these_abundances[-1])
                     # ^ assumes the abundances are in increasing metallicity
-                    interp_obj = interpolate.interp1d(log_met_values,
+                    interp_obj = interpolate.interp1d(log_z_nomoto,
                                                       these_abundances,
                                                       kind="linear",
                                                       bounds_error=False,
@@ -359,11 +450,7 @@ class Yields(object):
     def make_individual_nomoto_regular(self, mass):
         """Populates the model with the yields from the Nomoto 2006
         individual supernova values, not the IMF integrated ones."""
-        # we know the metallicity of the models Nomoto used
-        metallicity_values = [0, 0.001, 0.004, 0.02]
-        # to interpolate we need the log of that
-        log_met_values = [_metallicity_log(met) for met in metallicity_values]
-
+        self.metallicity_points = z_values_nomoto
         #we then need to open a bunch of files with all this data
         z_0_0_file = open(_get_data_path(nomoto_ind_0), "r")
         z_0_001_file = open(_get_data_path(nomoto_ind_0_001), "r")
@@ -406,7 +493,7 @@ class Yields(object):
             # outside the range of the models themselves
             fill_values = (items[0], items[-1])
             # ^ assumes the abundances are in increasing metallicity
-            interp_obj = interpolate.interp1d(log_met_values, items,
+            interp_obj = interpolate.interp1d(log_z_nomoto, items,
                                               kind="linear",
                                               bounds_error=False,
                                               fill_value=fill_values)
@@ -415,10 +502,7 @@ class Yields(object):
     def make_individual_nomoto_hn(self, mass):
         """Populates the model with the yields from the Nomoto 2006
         individual supernova values, not the IMF integrated ones."""
-        # we know the metallicity of the models Nomoto used
-        metallicity_values = [0, 0.001, 0.004, 0.02]
-        # to interpolate we need the log of that
-        log_met_values = [_metallicity_log(met) for met in metallicity_values]
+        self.metallicity_points = z_values_nomoto
 
         #we then need to open a bunch of files with all this data
         z_0_0_file = open(_get_data_path(nomoto_ind_0_hn), "r")
@@ -460,7 +544,7 @@ class Yields(object):
             # outside the range of the models themselves
             fill_values = (items[0], items[-1])
             # ^ assumes the abundances are in increasing metallicity
-            interp_obj = interpolate.interp1d(log_met_values, items,
+            interp_obj = interpolate.interp1d(log_z_nomoto, items,
                                               kind="linear",
                                               bounds_error=False,
                                               fill_value=fill_values)
@@ -469,13 +553,7 @@ class Yields(object):
     def make_individal_ww95(self, model):
         """Populates the model with the data from the individual 
         WW95 models"""
-
-        # we know the metallicity of the models WW95 used
-        z_sun = 0.02
-        metallicity_values = [0, (10**-4) * z_sun, 0.01 * z_sun,
-                              0.1 * z_sun, z_sun]
-        # to interpolate we need the log of that
-        log_met_values = [_metallicity_log(met) for met in metallicity_values]
+        self.metallicity_points = z_values_ww
 
         # we then need to open a bunch of files with all this data. Depending
         # on the mass of the model, we will have to open different files
@@ -539,7 +617,7 @@ class Yields(object):
                                    z_4_file]):
             for row in this_file:
                 # only get the rows that matter
-                if row.split()[0] in ["elt", "KE"]:
+                if row.split()[0] in ["elt", "KE", "Mass"]:
                     continue
 
                 # get the proper columns from the file
@@ -561,7 +639,7 @@ class Yields(object):
             # outside the range of the models themselves
             fill_values = (item[0], item[-1])
             # ^ assumes the abundances are in increasing metallicity
-            interp_obj = interpolate.interp1d(log_met_values, item,
+            interp_obj = interpolate.interp1d(log_z_ww, item,
                                               kind="linear",
                                               bounds_error=False,
                                               fill_value=fill_values)
@@ -573,7 +651,7 @@ class Yields(object):
         elements = defaultdict(list)
         for row in in_file:
             # only get the rows that matter
-            if row.split()[0] in ["elt", "KE"]:
+            if row.split()[0] in ["elt", "KE", "Mass"]:
                 continue
 
             # get the proper columns from the file
@@ -603,4 +681,42 @@ class Yields(object):
                                               fill_value=fill_values)
 
             self._abundances_interp[elt] = interp_obj
+
+    def make_imf_integrated(self, filename):
+        # we need to get the metallicities used here
+        if "nomoto" in filename:
+            log_z_values = log_z_nomoto
+            self.metallicity_points = z_values_nomoto
+        else:  # use WW
+            log_z_values = log_z_ww
+            self.metallicity_points = z_values_ww
+
+        # then iterate through each line and handle it appropriately
+        with open(_get_data_path(filename), "r") as in_file:
+            for line in in_file:
+                # ignore the comments
+                if not line.startswith("#"):
+                    # We then need to get the appropriate values from the line.
+                    # to do this we split it on spaces, then we know where
+                    # everything is
+                    split_line = line.split()
+                    elt = split_line[0]
+                    these_abundances = split_line[1:]
+
+                    # the element is already formatted properly, so we don't
+                    # have to change anything there
+
+                    # We then need to make the interpolation object. It takes
+                    # the metallicities and the corresponding abundances. We
+                    # also need to fix the extrapolation, so that it retuns
+                    # the values of the nearest model if the metallicity is
+                    # outside the range of the models themselves
+                    fill_values = (these_abundances[0], these_abundances[-1])
+                    # ^ assumes the abundances are in increasing metallicity
+                    interp_obj = interpolate.interp1d(log_z_values,
+                                                      these_abundances,
+                                                      kind="linear",
+                                                      bounds_error=False,
+                                                      fill_value=fill_values)
+                    self._abundances_interp[elt] = interp_obj
 
