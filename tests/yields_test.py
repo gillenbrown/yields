@@ -204,6 +204,10 @@ def test_met_log():
     assert yields._metallicity_log(0.01) == -2
     assert yields._metallicity_log(100) == 2
 
+    # test with arrays
+    assert np.array_equal(yields._metallicity_log(np.array([0, 1, 0.01])),
+                          np.array([-6, 0, -2]))
+
 def test_normalization_stability(yields_test_case):
     """Once we set the normalization, the total amount of metals should not
     change. Make sure that is the case. """
@@ -913,15 +917,29 @@ def test_mass_fractions():
     # directly from the table isn't as accurate as the real calculation here,
     # since I'm simply taking ejecta - H - He.
     mod = yields.Yields("ww_95_II_40C")
-    assert np.isclose(mod.mass_fraction("Li_7", 0.002), 1.413E-8)
-    assert np.isclose(mod.mass_fraction("Fe", 0.002), 0.0013, atol=0.0001)
+    assert np.isclose(mod.mass_fraction("Li_7", 0.002), 1.413E-8,
+                      atol=0, rtol=1E-2)
+    assert np.isclose(mod.mass_fraction("Fe", 0.002), 0.0013,
+                      atol=0., rtol=2E-2)
     assert np.isclose(mod.mass_fraction("O_16", 10**-4*0.02), 0.665, atol=0.01)
     assert np.isclose(mod.mass_fraction("Ne_20", 0), 0.143, atol=0.001)
     assert np.isclose(mod.mass_fraction("Al", 0), 5.3E-4, atol=0.1E-4)
 
+    # check the vectorization aspect of this
+    met_values = [0, 10**-4*0.02, 0.0002, 0.002]
+    assert np.allclose(mod.mass_fraction("O_16", met_values),
+                       [0.660, 0.665, 0.666, 0.656], atol=0.01)
+    assert np.allclose(mod.mass_fraction("Ge_65", met_values),
+                       [1.8E-21, 1.19E-26, 3.53E-24, 4.98E-23], atol=0,
+                       rtol=2E-2)
+
+    # check a different model
     mod = yields.Yields("ww_95_II_11A")
-    assert np.isclose(mod.mass_fraction("Li_7", 0.02), 5.19E-7)
+    assert np.isclose(mod.mass_fraction("Li_7", 0.02), 5.19E-7, atol=0,
+                      rtol=1E-1)
     assert np.isclose(mod.mass_fraction("N", 0.02), 0.087, atol=0.001)
+
+
 
 # TODO: handle the cases better for the ww95 models that only have one
 #       metallicity

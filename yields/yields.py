@@ -114,22 +114,26 @@ def _parse_iwamoto_model(full_name):
 def _metallicity_log(value):
     """When taking logs of metallicity, there is often a zero value that we
     don't want to break our code. I can assign a default value to that."""
-    if value == 0:
-        return -6  # chosen to that is is below the lowest metallicity value
-                   # in any of the models (lowest is 10^-4 z_sun in ww95).
-    else:
-        return np.log10(value)
+    # I want to vectorize this so that I can do the mass fraction interpolation
+    # in a vectorized fashion.
+    array = np.array(value, ndmin=1)
+    with np.errstate(divide='ignore'):
+        log_vals = np.log10(array)
+    log_vals[np.isneginf(log_vals)] = -6
+    return log_vals
+    # chosen to that is is below the lowest metallicity value
+    # in any of the models (lowest is 10^-4 z_sun in ww95).
 
 # store the known metallicity values
 z_values_nomoto = [0, 0.001, 0.004, 0.02]
 # to interpolate we need the log of that
-log_z_nomoto = [_metallicity_log(z) for z in z_values_nomoto]
+log_z_nomoto = _metallicity_log(z_values_nomoto)
 
 # we know the metallicity of the models WW95 used
 z_sun = 0.02
 z_values_ww = [0, (10**-4) * z_sun, 0.01 * z_sun, 0.1 * z_sun, z_sun]
 # to interpolate we need the log of that
-log_z_ww = [_metallicity_log(z) for z in z_values_ww]
+log_z_ww = _metallicity_log(z_values_ww)
 
 
 class Yields(object):
@@ -308,7 +312,7 @@ class Yields(object):
         self._mass_fractions_log_z = dict()
 
         # need the log of the model's z vals to interpolate with later
-        log_z_vals = [_metallicity_log(z) for z in self.metallicity_points]
+        log_z_vals = _metallicity_log(self.metallicity_points)
 
         temp_mass_frac_storage = defaultdict(list)
         for z in self.metallicity_points:
@@ -352,7 +356,7 @@ class Yields(object):
     def make_test(self):
         # totally arbitrary values for testing
         self.metallicity_points = [0, 1]
-        metallicities = [_metallicity_log(0), _metallicity_log(1)]
+        metallicities = _metallicity_log(self.metallicity_points)
         self._abundances_interp["H_1"] = interpolate.interp1d(metallicities,
                                                               [1, 2])
         self._abundances_interp["He_2"] = interpolate.interp1d(metallicities,
@@ -406,8 +410,7 @@ class Yields(object):
                     formatted_element = _parse_iwamoto_element(element)
                     # We then need to make the interpolation object. Since this
                     # will be the same at all metallicities, this is easy
-                    interp_obj = interpolate.interp1d([_metallicity_log(0),
-                                                       _metallicity_log(1)],
+                    interp_obj = interpolate.interp1d(_metallicity_log([0, 1]),
                                                       [float(abundance)]*2,
                                                       kind="linear")
                     self._abundances_interp[formatted_element] = interp_obj
@@ -673,8 +676,7 @@ class Yields(object):
             # outside the range of the models themselves
             fill_values = (item[0], item[-1])
             # ^ assumes the abundances are in increasing metallicity
-            interp_obj = interpolate.interp1d([_metallicity_log(0),
-                                               _metallicity_log(1)],
+            interp_obj = interpolate.interp1d(_metallicity_log([0, 1]),
                                               item*2, # item is a 1 element list
                                               kind="linear",
                                               bounds_error=False,
