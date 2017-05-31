@@ -200,6 +200,8 @@ class Yields(object):
                     raise ValueError("Not recognized.")
             elif "ww_95" in model_set:
                 self.make_imf_integrated(my_ww_file)
+            else:
+                raise ValueError("Not recognized.")
 
 
         elif model_set.startswith("nomoto_06_II"):
@@ -219,6 +221,10 @@ class Yields(object):
 
         # and that the user so far has not specified a normalization
         self.has_normalization = False
+
+        # fix the WW 95 iron thing
+        if "ww_95" in model_set:
+            self._handle_iron_ww()
 
         # all model sets have a zero metallicity option, so set the initial
         # metallicity to that. This takes care of the _set_member() call too.
@@ -684,3 +690,21 @@ class Yields(object):
                                                         these_abundances)
                     self._abundances_interp[elt] = interp_obj
 
+    def _handle_iron_ww(self):
+        """In the WW 95 yields, the 56 Ni should decay to Fe 56 after a longer
+        period of time, but the evolution stops too early. To fix this, we add
+        all the 56Ni to the 56Fe. """
+        real_56_fe_abundances = []
+        real_56_ni_abundances = []
+        for z in self.metallicity_points:
+            self.set_metallicity(z)
+            real_56_fe_abundances.append(self.Ni_56 + self.Fe_56)
+            real_56_ni_abundances.append(0)
+
+        ni_56_interp = _interpolation_wrapper(self.metallicity_points,
+                                              real_56_ni_abundances)
+        fe_56_interp = _interpolation_wrapper(self.metallicity_points,
+                                              real_56_fe_abundances)
+
+        self._abundances_interp["Ni_56"] = ni_56_interp
+        self._abundances_interp["Fe_56"] = fe_56_interp
