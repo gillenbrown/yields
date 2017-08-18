@@ -693,12 +693,13 @@ class Yields(object):
     def _handle_iron_ww(self):
         """In the WW 95 yields, the 56 Ni should decay to Fe 56 after a longer
         period of time, but the evolution stops too early. To fix this, we add
-        all the 56Ni to the 56Fe. """
+        all the 56Ni to the 56Fe. The Iron is also too high, so we divide
+        it by two."""
         real_56_fe_abundances = []
         real_56_ni_abundances = []
         for z in self.metallicity_points:
             self.set_metallicity(z)
-            real_56_fe_abundances.append(self.Ni_56 + self.Fe_56)
+            real_56_fe_abundances.append((self.Ni_56 + self.Fe_56) / 2.0)
             real_56_ni_abundances.append(0)
 
         ni_56_interp = _interpolation_wrapper(self.metallicity_points,
