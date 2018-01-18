@@ -44,13 +44,16 @@ class Abundances(object):
             self.yields_II = yields.Yields("ww_95_imf_ave")
 
     def _err_checking_z(self, Z_Ia, Z_II):
+        """Error checking on the user metallicity value."""
+        # turn to array if not already.
         if not isinstance(Z_Ia, np.ndarray):
             try:
-                len(Z_Ia)
+                len(Z_Ia) # checks for scalars
             except TypeError:
-                Z_Ia = np.array([Z_Ia])
+                Z_Ia = np.array([Z_Ia])  # scalars need to be in a list
             else:
-                Z_Ia = np.array(Z_Ia)
+                Z_Ia = np.array(Z_Ia)  # lists don't.
+        # same thing for Type II
         if not isinstance(Z_II, np.ndarray):
             try:
                 len(Z_II)
@@ -59,10 +62,10 @@ class Abundances(object):
             else:
                 Z_II = np.array(Z_II)
 
-        # do error checking.
         # all arrays must be the same length
         if not len(Z_Ia) == len(Z_II):
             raise ValueError("All arrays must be the same length. ")
+
         # the metallicity must be between 0 and 1.
         for z_type in [Z_Ia, Z_II]:
             if any(z_type < 0) or any(z_type > 1):
@@ -76,29 +79,28 @@ class Abundances(object):
         return Z_Ia, Z_II
 
     def _rtype(self, array):
+        """Return a float if we have a one element array, otherwise return
+        the whole array. """
         if len(array) == 1:
             return float(array[0])
         else:
             return array
 
     def z_on_h(self, Z_Ia, Z_II):
-        """Calculate the Z on H value for this collection of stars, by
-        dividing the total Z by the total H.
-
-        This is calculated in the following way. The derivation for this is
-        in my notebook, but here is the important equation.
+        """Calculate [Z/H].
 
         .. math::
-            [Z/H] = \log_{10} \left[ \frac{\sum_\star M_\star Z_{tot \star}}
-            {\sum_\star M_\star (1 - Z_{tot \star})}
-            \frac{1 - Z_\odot}{Z_\odot} \right]
+            [Z/H] = \log_{10} \left[ \frac{Z_{tot \star}}{1 - Z_{tot \star}} /
+            \frac{Z_\odot}{1 - Z_\odot} \right]
 
         This is basically the sum of metals divided by sum of not metals for
-        both the sun and the stars. Not metals is a proxy for Hydrogen, since
+        both the sun and the star. Not metals is a proxy for Hydrogen, since
         we assume cosmic abundances for both (not quite right, but not too bad).
 
-        :returns: [Z/H] value for this collection of stars
-        :rtype: float
+        :param Z_Ia: metallicity from type Ia supernovae
+        :param Z_II: metallicity from type II supernovae
+        :returns: [Z/H]
+        :rtype: float if a single metallicity is passed, otherwise np.ndarray
         """
         Z_Ia, Z_II = self._err_checking_z(Z_Ia, Z_II)
 
@@ -112,14 +114,15 @@ class Abundances(object):
         return self._rtype(np.log10(star_frac / sun_frac))
 
     def x_on_h(self, element, Z_Ia, Z_II):
-        """Calculate the [X/H] value for this collection of stars.
+        """Calculate [X/H].
 
         This is calculated in the following way.
 
         .. math::
-            [X/H] = \log_{10} \left[ \frac{\sum_\star M_\star (Z_\star^{Ia}
-            f_X^{Ia} + Z_\star^{II} f_X^{II})}{\sum_\star M_\star
-            (1 - Z_{tot \star})}\frac{1 - Z_\odot}{Z_\odot f_{X \odot}} \right]
+            [X/H] = \log_{10} \left[ \frac{Z_\star^{Ia}
+            f_X^{Ia} + Z_\star^{II} f_X^{II}}{
+            1 - Z_{tot \star}} / \frac{Z_\odot f_{X \odot}}{1 - Z_\odot} \right]
+
 
         Where f is the fraction of the total metals element x takes up for
         either the type Ia or II yields.
@@ -131,8 +134,10 @@ class Abundances(object):
 
         :param element: Element to be used in place of X.
         :type element: str
-        :returns: Value of [X/H] for the given element.
-        :rtype: float
+        :param Z_Ia: metallicity from type Ia supernovae
+        :param Z_II: metallicity from type II supernovae
+        :returns: [X/H]
+        :rtype: float if a single metallicity is passed, otherwise np.ndarray
         """
         Z_Ia, Z_II = self._err_checking_z(Z_Ia, Z_II)
 
@@ -154,15 +159,15 @@ class Abundances(object):
         return self._rtype(np.log10(star_frac / sun_frac))
 
     def x_on_fe(self, element, Z_Ia, Z_II):
-        """Calculate the [X/Fe] value for this collection of stars.
+        """Calculate [X/Fe].
 
         This is calculated in the following way.
 
         .. math::
-            [X/Fe] = \log_{10} \left[ \frac{\sum_\star M_\star
-            (Z_\star^{Ia}f_X^{Ia} + Z_\star^{II} f_X^{II})}{\sum_\star M_\star
-            (Z_\star^{Ia}f_{Fe}^{Ia} + Z_\star^{II} f_{Fe}^{II})}
-            \frac{f_{Fe \odot}}{f_{X \odot}} \right]
+            [X/Fe] = \log_{10} \left[ \frac{
+            Z_\star^{Ia}f_X^{Ia} + Z_\star^{II} f_X^{II}}{
+            Z_\star^{Ia}f_{Fe}^{Ia} + Z_\star^{II} f_{Fe}^{II}} /
+            \frac{f_{X \odot}}{f_{Fe \odot}} \right]
 
         Where f is the fraction of the total metals element x takes up for
         either the type Ia or II yields.
@@ -172,8 +177,10 @@ class Abundances(object):
 
         :param element: Element to be used in place of X.
         :type element: str
-        :returns: Value of [X/Fe] for the given element.
-        :rtype: float
+        :param Z_Ia: metallicity from type Ia supernovae
+        :param Z_II: metallicity from type II supernovae
+        :returns: [X/Fe]
+        :rtype: float if a single metallicity is passed, otherwise np.ndarray
         """
         Z_Ia, Z_II = self._err_checking_z(Z_Ia, Z_II)
 
@@ -199,13 +206,10 @@ class Abundances(object):
     def log_z_over_z_sun(self, Z_Ia, Z_II):
         """Returns the value of log(Z/Z_sun).
 
-        This is a pretty straightforward calculation. We just take the total
-        mass in metals and divide by the total stellar mass to get the
-        overall metallicity of the star particles, then divide that by the
-        solar metallicity.
-
+        :param Z_Ia: metallicity from type Ia supernovae
+        :param Z_II: metallicity from type II supernovae
         :returns: value of log(Z/Z_sun)
-        :rtype: float
+        :rtype: float if a single metallicity is passed, otherwise np.ndarray
         """
         Z_Ia, Z_II = self._err_checking_z(Z_Ia, Z_II)
 
