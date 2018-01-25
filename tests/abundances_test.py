@@ -109,6 +109,25 @@ def test_rtype_multi_list_elt(func):
 
 # -----------------------------------------------------------
 
+#  Test length of output arrays
+
+# -----------------------------------------------------------
+@pytest.mark.parametrize("func", abundance_functions_basic)
+def test_rtype_multi_list(func):
+    z_I = np.random.uniform(0, 0.01, 1234)
+    z_II = np.random.uniform(0, 0.02, 1234)
+    assert len(func(z_I, z_II)) == 1234
+
+
+@pytest.mark.parametrize("func", abundance_functions_elts)
+def test_rtype_multi_list(func):
+    z_I = np.random.uniform(0, 0.01, 1234)
+    z_II = np.random.uniform(0, 0.02, 1234)
+    assert len(func("O", z_I, z_II)) == 1234
+
+
+# -----------------------------------------------------------
+
 #  Test [Z/H]
 
 # -----------------------------------------------------------
