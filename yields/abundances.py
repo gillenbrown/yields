@@ -27,6 +27,24 @@ class Abundances(object):
     # get some of the solar information
     Z_sun, solar_metal_fractions = create_solar_metal_fractions()
 
+    @classmethod
+    def hydrogen(cls, Z_tot):
+        """
+        Calculate the fraction of mass in H for a given Z. This assumes a solar
+        ratio of Helium to Hydrogen, and we use the following math:
+
+        X + Y + Z = 1
+        X (1 + Y/X) = 1 - Z
+        X = (1 - Z)/(1 + Y/X)
+
+        :param Z_tot: Total metallicity.
+        :return: Mass fraction of H.
+        """
+        Y = cls.solar_metal_fractions["He"]
+        X = cls.solar_metal_fractions["H"]
+
+        return (1 - Z_tot) / (1 + Y/X)
+
     def __init__(self, II_type="nomoto"):
         """Create an abundance object.
 
@@ -106,8 +124,8 @@ class Abundances(object):
 
         Z_tot = Z_Ia + Z_II
         try:
-            star_frac = Z_tot / (1.0 - Z_tot)
-            sun_frac  = self.Z_sun / (1.0 - self.Z_sun)
+            star_frac = Z_tot / self.hydrogen(Z_tot)
+            sun_frac  = self.Z_sun / self.hydrogen(self.Z_sun)
         except ZeroDivisionError:
             return np.inf
 
@@ -147,13 +165,13 @@ class Abundances(object):
 
         try:
             star_num = Z_Ia * f_Ia + Z_II * f_II
-            star_denom = 1.0 - (Z_Ia + Z_II)
+            star_denom = self.hydrogen(Z_Ia + Z_II)
             star_frac = star_num / star_denom
         except ZeroDivisionError:
             return np.inf
 
         sun_num = self.Z_sun * self.solar_metal_fractions[element]
-        sun_denom = 1.0 - self.Z_sun
+        sun_denom = self.hydrogen(self.Z_sun)
         sun_frac = sun_num / sun_denom
 
         return self._rtype(np.log10(star_frac / sun_frac))
