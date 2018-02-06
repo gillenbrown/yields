@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+from astropy import table
 
 import yields
 
@@ -9,8 +10,8 @@ import yields
 def create_solar_metal_fractions():
     this_dir = os.path.dirname(__file__)
     solar_file = this_dir + '/data/solar_abundance.txt'
-    solar = np.genfromtxt(solar_file, dtype=None,
-                          names=['Natom', 'name', 'fN', 'log', 'f_mass'])
+    solar = table.Table.read(solar_file, format="ascii",
+                             names=['Natom', 'name', 'fN', 'log', 'f_mass'])
     z_mass = np.sum(solar["f_mass"][2:])
 
     metal_fractions = dict()
