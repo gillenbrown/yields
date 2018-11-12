@@ -130,8 +130,8 @@ z_values_nomoto = [0, 0.001, 0.004, 0.02]
 log_z_nomoto = _metallicity_log(z_values_nomoto)
 
 # we know the metallicity of the models WW95 used
-z_sun = 0.02
-z_values_ww = [0, (10**-4) * z_sun, 0.01 * z_sun, 0.1 * z_sun, z_sun]
+z_sun_ww = 0.02
+z_values_ww = [0, (10**-4) * z_sun_ww, 0.01 * z_sun_ww, 0.1 * z_sun_ww, z_sun_ww]
 # to interpolate we need the log of that
 log_z_ww = _metallicity_log(z_values_ww)
 
