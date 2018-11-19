@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+import sys
 
 from scipy import interpolate
 import numpy as np
@@ -37,6 +38,8 @@ ww_ind_4_sol_b = "ww_individual/ww95_14b.txt"
 ww_ind_0_a = "ww_individual/ww95_16a.txt"
 ww_ind_0_b = "ww_individual/ww95_16b.txt"
 
+nugrid_agb = "nugrid_agb/isotope_yield_table_MESAonly_fryer12_delay_winds.txt"
+
 def _get_data_path(data_file):
     """Returns the path of the Iwamoto input file on this machine.
     
@@ -45,7 +48,8 @@ def _get_data_path(data_file):
     this_file_dir = os.path.dirname(__file__)
     return this_file_dir + "/data/{}".format(data_file)
 
-
+sys.path.append(_get_data_path("nugrid_agb/"))
+import read_yields
 
 def _parse_iwamoto_element(original_string):
     """Parses the LaTeX formatted string into an element that the code can use
@@ -250,6 +254,10 @@ class Yields(object):
             else:
                 mass = model_set[-2:]
                 self.make_individual_kobayashi(mass, hn=False)
+
+        elif model_set.startswith("nugrid"):
+             mass = model_set.split("_")[-1]
+             self.make_individual_agb_nugrid(mass)
 
         else:
             raise ValueError("This model is not supported. Make sure you\n" +
@@ -825,6 +833,34 @@ class Yields(object):
 
         self._abundances_interp["Ni_56"] = ni_56_interp
         self._abundances_interp["Fe_56"] = fe_56_interp
+
+    def make_individual_agb_nugrid(self, mass):
+        self.mass = float(mass)
+        nugrid_read = read_yields.read_nugrid_yields(_get_data_path(nugrid_agb))
+
+        self.metallicity_points = sorted(nugrid_read.metallicities)
+        masses = nugrid_read.get(Z=0.02, quantity="masses")
+
+        if self.mass not in masses:
+            raise ValueError("This model was not found:"
+                             " nugrid_{}".format(mass))
+
+        isotopes = nugrid_read.header_attrs["Isotopes"].split(" ")
+        isotopes = [iso.replace(",", "") for iso in isotopes]
+
+        for isotope in isotopes:
+            yields = [nugrid_read.get(M=self.mass, Z=Z, quantity="Yields",
+                                      specie=isotope)
+                      for Z in self.metallicity_points]
+
+            iso_name = isotope.replace("-", "_")
+
+            # then make the interpolation object
+            interp_obj = _interpolation_wrapper(self.metallicity_points,
+                                                yields)
+
+            self._abundances_interp[iso_name] = interp_obj
+
 
     #TODO: handle the mass, and various ejecta variables more properly for both
     # the WW set and the IMF integrated set.

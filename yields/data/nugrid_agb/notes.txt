@@ -1,0 +1,5 @@
+For AGB stars 7 solar masses and below, the files are all the same. They only change for the supernovae.
+
+Note that read_yields.py is a file that has tabs set to be 8 spaces.
+
+The yields column contains the solar masses of material that were ejected, such that M_initial = M_final + sum(Yields). 
