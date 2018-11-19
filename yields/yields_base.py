@@ -579,14 +579,19 @@ class Yields(object):
 
     def make_individual_kobayashi(self, mass, hn):
         """
+        Populate the class with yields from Kobayashi+ 2006.
 
-        :param mass:
-        :param hn:
-        :return:
+        :param mass: Mass of the individual SN model
+        :type mass: str
+        :param hn: Whether or not this is a hypernova model.
+        :type hn: bool
+        :return: None
         """
+        # set the moetallicity and mass
         self.metallicity_points = z_values_nomoto
         self.mass = float(mass)
 
+        # get the correct file, and the indices for the mass models in that file
         if hn:
             in_file = kobayashi_hn
             idxs = {"20": 2, "25": 3, "30": 4, "40": 5}
@@ -595,46 +600,51 @@ class Yields(object):
             idxs = {"13": 2, "15": 3, "18": 4, "20": 5, "25": 6, "30": 7,
                     "40": 8}
 
+        # verify that the use passed in a model that exists
         try:
             idx = idxs[mass]
         except KeyError:
             raise ValueError("This model was not found:"
                              " kobayashi_II_{}_hn".format(mass))
 
+        # create temporary dictionary for reading the file, due to
+        # its unhelpful format.
         temp_items = {z:dict() for z in self.metallicity_points}
-
+        # read the file
         with open(_get_data_path(in_file), "r") as data_file:
             for line in data_file:
-                if line.startswith("#"):
+                if line.startswith("#"):  # comment lines
                     continue
 
                 # otherwise we have an actual data line
                 split_line = line.split()
                 z = float(split_line[0])
-                elt = split_line[1]
+                elt = str(split_line[1])
                 value = float(split_line[idx])
 
-                # what we do with it depends on what the "elt" is
+                # what we do with it depends on what the "elt" is.
                 if elt == "M_cut_":
-                    self.mass_cuts[z] = value
+                    self.mass_cuts[z] = value  # store this directly
                 elif elt == "M_final_":
+                    # store the mass lost to winds
                     self.wind_ejecta[z] = self.mass - value
-
                 else:
+                    # store this in the temporary container after parsing elt.
                     elt = _parse_kobayashi_individual_element(elt)
                     temp_items[z][elt] = value
 
         # then we can parse the ejected values into the appropriate format
         for elt in temp_items[0].keys():
+            # get all the values for a given element
             values = [temp_items[z][elt] for z in self.metallicity_points]
+            # then make the object to interpolate those in metallicity.
             interp_obj = _interpolation_wrapper(self.metallicity_points, values)
-
             self._abundances_interp[elt] = interp_obj
 
+        # finally we can set the ejected mass by using the other values.
         for z in self.metallicity_points:
             self.total_sn_ejecta[z] = self.mass - (self.mass_cuts[z] +
                                                    self.wind_ejecta[z])
-
 
 
     def make_individal_ww95(self, model):
