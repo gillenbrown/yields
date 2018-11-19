@@ -40,6 +40,8 @@ ww_ind_0_b = "ww_individual/ww95_16b.txt"
 
 nugrid_agb = "nugrid_agb/isotope_yield_table_MESAonly_fryer12_delay_winds.txt"
 
+nomoto_w7 = "nomoto_18_Ia.txt"
+
 def _get_data_path(data_file):
     """Returns the path of the Iwamoto input file on this machine.
     
@@ -215,6 +217,8 @@ class Yields(object):
             self.make_test()
         elif model_set.startswith("iwamoto_99_Ia_"):
             self.make_iwamoto_99_Ia(_parse_iwamoto_model(model_set))
+        elif model_set == "nomoto_18_Ia_W7":
+            self.make_nomoto_18_Ia()
         elif model_set == "nomoto_06_II":
             self.make_nomoto_06_II()
         elif "imf" in model_set:
@@ -835,31 +839,63 @@ class Yields(object):
         self._abundances_interp["Fe_56"] = fe_56_interp
 
     def make_individual_agb_nugrid(self, mass):
-        self.mass = float(mass)
-        nugrid_read = read_yields.read_nugrid_yields(_get_data_path(nugrid_agb))
+        """
+        Populate the model with data from the NuGrid AGB models.
 
+        :param mass: Mass (in solar masses) of the desired model
+        :return: None
+        """
+        self.mass = float(mass)
+        # use the NuGrid code to read the yields
+        nugrid_read = read_yields.read_nugrid_yields(_get_data_path(nugrid_agb))
+        # get the metallicity points and masses
         self.metallicity_points = sorted(nugrid_read.metallicities)
         masses = nugrid_read.get(Z=0.02, quantity="masses")
-
+        # check for valid mass
         if self.mass not in masses:
             raise ValueError("This model was not found:"
                              " nugrid_{}".format(mass))
-
+        # get the isotopes present in the model, and slightly parse them
         isotopes = nugrid_read.header_attrs["Isotopes"].split(" ")
         isotopes = [iso.replace(",", "") for iso in isotopes]
 
+        # go through all the isotopes and get the yields
         for isotope in isotopes:
+            # use the NuGrid code to read in the given isotope
             yields = [nugrid_read.get(M=self.mass, Z=Z, quantity="Yields",
                                       specie=isotope)
                       for Z in self.metallicity_points]
 
-            iso_name = isotope.replace("-", "_")
-
             # then make the interpolation object
             interp_obj = _interpolation_wrapper(self.metallicity_points,
                                                 yields)
-
+            # format the name before puttting in the interpolation object
+            iso_name = isotope.replace("-", "_")
             self._abundances_interp[iso_name] = interp_obj
+
+    def make_nomoto_18_Ia(self):
+        """
+        Populate the model with data from the Nomoto 2018 W7 models.
+
+        :return: None
+        """
+        # manually enter the metallicity points (solar and 0.1 solar)
+        self.metallicity_points = [0.002, 0.02]
+
+        with open(_get_data_path("nomoto_18_Ia.txt"), "r") as data_file:
+            for row in data_file:
+                if row.startswith("#"):
+                    continue
+                # the data is just three values: element, then yields at the
+                # two metallicities
+                elt, val_subsolar, val_solar = row.split()
+                elt = _parse_nomoto_individual_element(elt)
+
+                # then make the interpolation object
+                interp_obj = _interpolation_wrapper(self.metallicity_points,
+                                                    [val_subsolar, val_solar])
+
+                self._abundances_interp[elt] = interp_obj
 
 
     #TODO: handle the mass, and various ejecta variables more properly for both

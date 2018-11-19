@@ -1466,5 +1466,43 @@ def test_nugrid_7():
     assert individual.C_12 == 1.421E-03
     assert individual.Mg_26 == 3.802E-06
 
+# ----------------------------------------------------------
+
+# testing Nomoto 18 Ia
+
+# ----------------------------------------------------------
+def test_nomoto_Ia_w7():
+    individual = yields_base.Yields("nomoto_18_Ia_W7")
+
+    individual.set_metallicity(0.02)
+    assert individual.C_12 == 4.75E-2
+    assert individual.C_13 == 5.17E-8
+    assert individual.N_14 == 1.1E-5
+    assert individual.N_15 == 5.46E-8
+    assert individual.O_16 == 5.0E-2
+    assert individual.O_17 == 4.6E-6
+    assert individual.O_18 == 1.43E-7
+    assert individual.Fe_54 == 0.131
+    assert individual.Fe_56 == 0.741
+    assert individual.Fe_57 == 2.7E-2
+    assert individual.Fe_58 == 6.24E-4
+    assert individual.Fe_60 == 1.21E-8
+    assert individual.Cl_35 == 1.35E-4
+
+    individual.set_metallicity(0.002)
+    assert individual.C_12 == 6.67E-2
+    assert individual.C_13 == 1.28E-12
+    assert individual.N_14 == 7.83E-10
+    assert individual.N_15 == 1.32E-8
+    assert individual.O_16 == 9.95E-2
+    assert individual.O_17 == 1.32E-11
+    assert individual.O_18 == 7.60E-13
+    assert individual.Fe_54 == 0.18
+    assert individual.Fe_56 == 0.683
+    assert individual.Fe_57 == 1.85E-2
+    assert individual.Fe_58 == 5.64E-4
+    assert individual.Fe_60 == 1.10E-8
+    assert individual.Cl_35 == 1.82E-5
+
 # TODO: handle the cases better for the ww95 models that only have one
 #       metallicity
