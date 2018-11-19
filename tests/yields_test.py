@@ -8,14 +8,17 @@ def yields_test_case():
     return yields_base.Yields("test")
 
 def test_metals_sum(yields_test_case):
-    assert yields_test_case.metals_sum() == 55 - 3  # sum(3..10)
+    assert yields_test_case.ejecta_sum(metal_only=True) == 55 - 3  # sum(3..10)
+    # this is because the test has elements 1 to 10, with an abundance of 1 to
+    # 10, and we exclude H and He
+    assert yields_test_case.ejecta_sum(metal_only=False) == 55  # sum(1..10)
     # this is because the test has elements 1 to 10, with an abundance of 1 to
     # 10, and we exclude H and He
 
 def test_normalize_metals(yields_test_case):
     """Test whether or not the normalization is working properly"""
     yields_test_case.normalize_metals(1)
-    assert np.isclose(yields_test_case.metals_sum(), 1)
+    assert np.isclose(yields_test_case.ejecta_sum(metal_only=True), 1)
     assert np.isclose(yields_test_case.H_1, 1.0 / 52.0)  # 1 / sum(3..10)
     assert np.isclose(yields_test_case.F_9, 9.0 / 52.0)
     assert np.isclose(yields_test_case.Na_10, 10.0 / 52.0)
@@ -25,7 +28,7 @@ def test_normalize_metals(yields_test_case):
 
     # normalize to a value other than 1
     yields_test_case.normalize_metals(25.0)
-    assert np.isclose(yields_test_case.metals_sum(), 25.0)
+    assert np.isclose(yields_test_case.ejecta_sum(metal_only=True), 25.0)
     assert np.isclose(yields_test_case.H_1, 25.0 / 52.0) # 1 / sum(1..10)
     assert np.isclose(yields_test_case.F_9, 9.0 * 25.0 / 52.0)
     assert np.isclose(yields_test_case.Na_10, 10.0 * 25.0 / 52.0)
@@ -67,6 +70,25 @@ def test_interpolate_z_test(yields_test_case):
     assert yields_test_case.H_1 == 1.5
     assert yields_test_case.F_9 == 9.5
     assert yields_test_case.Na_10 == 10.5
+
+
+test_trips = [["H", 1.0, 0.0], ["H", 2.0, 1.0],
+              ["He", 2.0, 0.0], ["He", 3.0, 1.0],
+              ["Li", 3.0, 0.0], ["Li", 4.0, 1.0],
+              ["Na", 10.0, 0.0], ["Na", 11.0, 1.0]]
+@pytest.mark.parametrize("elt,mass,z", test_trips)
+def test_mass_fractions(yields_test_case, elt, mass, z):
+    total_mass = {0: 55.0, 1.0: 65.0}
+    real_mass_frac = mass / total_mass[z]
+    test_mass_frac = yields_test_case.mass_fraction(elt, z, metal_only=False)
+    assert real_mass_frac == test_mass_frac
+
+@pytest.mark.parametrize("elt,mass,z", test_trips)
+def test_metal_fractions(yields_test_case, elt, mass, z):
+    total_mass = {0: 52.0, 1.0: 60.0}
+    real_mass_frac = mass / total_mass[z]
+    test_mass_frac = yields_test_case.mass_fraction(elt, z, metal_only=True)
+    assert real_mass_frac == test_mass_frac
 
 
 def test_get_iwamoto_path():
@@ -214,13 +236,16 @@ def test_normalization_stability(yields_test_case):
     yields_test_case.set_metallicity(0)
     total_metals = 10
     yields_test_case.normalize_metals(total_metals)
-    assert np.isclose(yields_test_case.metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.ejecta_sum(metal_only=True),
+                      total_metals)
     # then change the metallicity
     yields_test_case.set_metallicity(0.2)
-    assert np.isclose(yields_test_case.metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.ejecta_sum(metal_only=True),
+                      total_metals)
     # then do it again
     yields_test_case.set_metallicity(1)
-    assert np.isclose(yields_test_case.metals_sum(), total_metals)
+    assert np.isclose(yields_test_case.ejecta_sum(metal_only=True),
+                      total_metals)
 
 def test_nomoto_parser():
     """Test the funciton that takes the name and element from the Nomoto file

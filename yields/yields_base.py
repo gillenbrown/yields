@@ -267,7 +267,7 @@ class Yields(object):
         self.set_metallicity(0, initial=True)
 
         # we then want to keep track of the initial total metals
-        self.total_metals = self.metals_sum()
+        self.total_metals = self.ejecta_sum(metal_only=True)
 
         # then create the mass fraction objects
         self._create_mass_fractions()
@@ -276,10 +276,10 @@ class Yields(object):
         """Sets the metallicity (Z). This is needed since the models depend on Z
         
         :param metallicity: The metallicity (Z) at which to calculate the 
-                            supernova yields. 
-        :param initial: Whether or not this is the first time this is done. 
-                        Since this is called in the __init__() function, as a 
-                        user this will always be False, which is the default 
+                            supernova yields.
+        :param initial: Whether or not this is the first time this is done.
+                        Since this is called in the __init__() function, as a
+                        user this will always be False, which is the default
                         value. Do not set True here.
         """
         # first do error checking
@@ -332,16 +332,19 @@ class Yields(object):
             # element + "_" is needed to that "H" doesn't match with "He".
             self.abundances[element] = np.sum(this_element)
 
-    def metals_sum(self):
-        """Gets the sum of the metals in the yields. This includes everything 
-        other than H and He."""
-        total_metals = 0
-        for isotope in self.abundances:
-            if "_" not in isotope and isotope not in ["H", "He"]:
-            # use the sums we already created to make this easier.
-                total_metals += self.abundances[isotope]
+    def ejecta_sum(self, metal_only=False):
+        if metal_only:
+            forbidden = ["H", "He"]
+        else:
+            forbidden = []
 
-        return float(total_metals)
+        total_ejecta = 0
+        for isotope in self.abundances:
+            if "_" not in isotope and isotope not in forbidden:
+                # use the sums we already created to make this easier.
+                total_ejecta += self.abundances[isotope]
+
+        return float(total_ejecta)
 
     def normalize_metals(self, total_metals):
         """Takes the yields and normalizes them to have some total metal output.
@@ -349,7 +352,7 @@ class Yields(object):
         :type total_metals: float
         """
         # first get the original sum of metals, so we know
-        total_before = self.metals_sum()
+        total_before = self.ejecta_sum(metal_only=True)
         scale_factor = total_metals / total_before
         for key in self.abundances:
             self.abundances[key] *= scale_factor
@@ -373,33 +376,42 @@ class Yields(object):
 
         # first create the dictionary. We have one that is under the hood, and
         # holds the objects where the interpolation is done in log Z space
+        self._metal_fractions_log_z = dict()
         self._mass_fractions_log_z = dict()
 
-        # need the log of the model's z vals to interpolate with later
-        log_z_vals = _metallicity_log(self.metallicity_points)
-
         temp_mass_frac_storage = defaultdict(list)
+        temp_metal_fract_storage = defaultdict(list)
         for z in self.metallicity_points:
             self.set_metallicity(z)
-            tot_metals = self.metals_sum()
+            tot_metals = self.ejecta_sum(metal_only=True)
+            tot_ejecta = self.ejecta_sum(metal_only=False)
             # need to do this for all elements
             for isotope in self.abundances:
                 # to calculate the mass fraction, we divide the mass of this
                 # isotope by the total mass in metals
-                this_frac = self.abundances[isotope] / tot_metals
-                temp_mass_frac_storage[isotope].append(this_frac)
+                this_metal_frac = self.abundances[isotope] / tot_metals
+                this_mass_frac = self.abundances[isotope] / tot_ejecta
 
+                temp_mass_frac_storage[isotope].append(this_mass_frac)
+                temp_metal_fract_storage[isotope].append(this_metal_frac)
 
         # then create the interpolation object
-        for isotope, mass_fractions in temp_mass_frac_storage.items():
-            interp_obj = _interpolation_wrapper(self.metallicity_points,
-                                                mass_fractions)
-            self._mass_fractions_log_z[isotope] = interp_obj
+        for isotope in self.abundances:
+            mass_fractions = temp_mass_frac_storage[isotope]
+            metal_fractions = temp_metal_fract_storage[isotope]
+
+            mass_interp = _interpolation_wrapper(self.metallicity_points,
+                                                 mass_fractions)
+            metal_interp = _interpolation_wrapper(self.metallicity_points,
+                                                  metal_fractions)
+
+            self._mass_fractions_log_z[isotope] = mass_interp
+            self._metal_fractions_log_z[isotope] = metal_interp
 
         # then restore the metallicity
         self.set_metallicity(initial_z)
 
-    def mass_fraction(self, isotope, metallicity):
+    def mass_fraction(self, isotope, metallicity, metal_only=True):
         """Get the mass fraction for a particular isotope. """
 
         # this needs to be done because the function that does the interpolation
@@ -407,7 +419,10 @@ class Yields(object):
         # that, so we have to transform the metallicity before calling it.
         # That's all we do here.
         log_z = _metallicity_log(metallicity)
-        return self._mass_fractions_log_z[isotope](log_z)
+        if metal_only:
+            return self._metal_fractions_log_z[isotope](log_z)
+        else:
+            return self._mass_fractions_log_z[isotope](log_z)
 
     def make_test(self):
         # totally arbitrary values for testing
