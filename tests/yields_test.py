@@ -365,6 +365,11 @@ def test_parse_nomoto_individual_element():
 def test_individual_nomoto_mass_13():
     individual = yields_base.Yields("nomoto_06_II_13")
 
+    assert individual.mass_cuts[0] == 1.57
+    assert individual.mass_cuts[0.001] == 1.65
+    assert individual.mass_cuts[0.004] == 1.61
+    assert individual.mass_cuts[0.02] == 1.60
+
     individual.set_metallicity(0)
     assert individual.O_18 == 5.79E-8
     assert individual.Ga_71 == 8.53E-15
@@ -383,6 +388,11 @@ def test_individual_nomoto_mass_13():
 
 def test_individual_nomoto_mass_18():
     individual = yields_base.Yields("nomoto_06_II_18")
+
+    assert individual.mass_cuts[0] == 1.65
+    assert individual.mass_cuts[0.001] == 1.70
+    assert individual.mass_cuts[0.004] == 1.61
+    assert individual.mass_cuts[0.02] == 1.58
 
     individual.set_metallicity(0)
     assert individual.O_18 == 4.63E-6
@@ -403,6 +413,11 @@ def test_individual_nomoto_mass_18():
 def test_individual_nomoto_mass_25():
     individual = yields_base.Yields("nomoto_06_II_25")
 
+    assert individual.mass_cuts[0] == 1.92
+    assert individual.mass_cuts[0.001] == 1.91
+    assert individual.mass_cuts[0.004] == 1.68
+    assert individual.mass_cuts[0.02] == 1.69
+
     individual.set_metallicity(0)
     assert individual.O_18 == 6.75E-7
     assert individual.Ga_71 == 2.24E-13
@@ -422,6 +437,11 @@ def test_individual_nomoto_mass_25():
 def test_individual_nomoto_mass_40():
     individual = yields_base.Yields("nomoto_06_II_40")
 
+    assert individual.mass_cuts[0] == 2.89
+    assert individual.mass_cuts[0.001] == 3.17
+    assert individual.mass_cuts[0.004] == 2.81
+    assert individual.mass_cuts[0.02] == 2.21
+
     individual.set_metallicity(0)
     assert individual.O_18 == 2.13E-7
     assert individual.Ga_71 == 1.36E-15
@@ -440,6 +460,11 @@ def test_individual_nomoto_mass_40():
 
 def test_nomoto_hn_20():
     individual = yields_base.Yields("nomoto_06_II_20_hn")
+
+    assert individual.mass_cuts[0] == 1.87
+    assert individual.mass_cuts[0.001] == 2.20
+    assert individual.mass_cuts[0.004] == 2.20
+    assert individual.mass_cuts[0.02] == 1.74
 
     individual.set_metallicity(0)
     assert individual.He_3 == 4.76E-5
@@ -461,6 +486,11 @@ def test_nomoto_hn_20():
 def test_nomoto_hn_25():
     individual = yields_base.Yields("nomoto_06_II_25_hn")
 
+    assert individual.mass_cuts[0] == 2.74
+    assert individual.mass_cuts[0.001] == 2.09
+    assert individual.mass_cuts[0.004] == 1.96
+    assert individual.mass_cuts[0.02] == 2.03
+
     individual.set_metallicity(0)
     assert individual.He_3 == 2.11E-4
     assert individual.B_10 == 7.45E-14
@@ -481,6 +511,11 @@ def test_nomoto_hn_25():
 def test_nomoto_hn_30():
     individual = yields_base.Yields("nomoto_06_II_30_hn")
 
+    assert individual.mass_cuts[0] == 3.13
+    assert individual.mass_cuts[0.001] == 2.54
+    assert individual.mass_cuts[0.004] == 3.98
+    assert individual.mass_cuts[0.02] == 2.97
+
     individual.set_metallicity(0)
     assert individual.He_3 == 2.06E-4
     assert individual.B_10 == 1.05E-14
@@ -500,6 +535,11 @@ def test_nomoto_hn_30():
 
 def test_nomoto_hn_40():
     individual = yields_base.Yields("nomoto_06_II_40_hn")
+
+    assert individual.mass_cuts[0] == 5.43
+    assert individual.mass_cuts[0.001] == 5.41
+    assert individual.mass_cuts[0.004] == 4.41
+    assert individual.mass_cuts[0.02] == 2.63
 
     individual.set_metallicity(0)
     assert individual.He_3 == 2.56E-5
@@ -524,6 +564,263 @@ def test_nomoto_error_checking():
         yields_base.Yields("nomoto_06_II_19")
     with pytest.raises(ValueError):
         yields_base.Yields("nomoto_06_12")
+
+
+def test_individual_kobayashi_mass_13():
+    individual = yields_base.Yields("kobayashi_06_II_13")
+
+    assert individual.mass_cuts[0] == 1.57
+    assert individual.mass_cuts[0.001] == 1.65
+    assert individual.mass_cuts[0.004] == 1.61
+    assert individual.mass_cuts[0.02] == 1.60
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.07)
+    assert individual.wind_ejecta[0.004] == pytest.approx(0.14)
+    assert individual.wind_ejecta[0.02] == pytest.approx(0.27)
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 5.79E-8
+    assert individual.Ga_71 == 8.53E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 1.07E-1
+    assert individual.Si_30 == 1.85E-3
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 3.85E-1
+    assert individual.Ca_40 == 3.91E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 4.28E-10
+    assert individual.Al_27 == 1.50E-3
+
+def test_individual_kobayashi_mass_18():
+    individual = yields_base.Yields("kobayashi_06_II_18")
+
+    assert individual.mass_cuts[0] == 1.65
+    assert individual.mass_cuts[0.001] == 1.70
+    assert individual.mass_cuts[0.004] == 1.61
+    assert individual.mass_cuts[0.02] == 1.58
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.16)
+    assert individual.wind_ejecta[0.004] == pytest.approx(1.41)
+    assert individual.wind_ejecta[0.02] == pytest.approx(1.24)
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 4.63E-6
+    assert individual.Ga_71 == 1.84E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 1.30E-1
+    assert individual.Si_30 == 5.34E-4
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 5.21E-1
+    assert individual.Ca_40 == 6.12E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 6.41E-10
+    assert individual.Al_27 == 1.00E-2
+
+def test_individual_kobayashi_mass_25():
+    individual = yields_base.Yields("kobayashi_06_II_25")
+
+    assert individual.mass_cuts[0] == 1.92
+    assert individual.mass_cuts[0.001] == 1.91
+    assert individual.mass_cuts[0.004] == 1.68
+    assert individual.mass_cuts[0.02] == 1.69
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.58)
+    assert individual.wind_ejecta[0.004] == pytest.approx(0.97)
+    assert individual.wind_ejecta[0.02] == pytest.approx(3.37)
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 6.75E-7
+    assert individual.Ga_71 == 2.24E-13
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 2.15E-1
+    assert individual.Si_30 == 2.75E-4
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 2.20
+    assert individual.Ca_40 == 3.77E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 6.77E-10
+    assert individual.Al_27 == 2.70E-2
+
+def test_individual_kobayashi_mass_40():
+    individual = yields_base.Yields("kobayashi_06_II_40")
+
+    assert individual.mass_cuts[0] == 2.89
+    assert individual.mass_cuts[0.001] == 3.17
+    assert individual.mass_cuts[0.004] == 2.81
+    assert individual.mass_cuts[0.02] == 2.21
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(2.19)
+    assert individual.wind_ejecta[0.004] == pytest.approx(7.07)
+    assert individual.wind_ejecta[0.02] == pytest.approx(18.17)
+
+    individual.set_metallicity(0)
+    assert individual.O_18 == 2.13E-7
+    assert individual.Ga_71 == 1.36E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.C_12 == 7.37E-2
+    assert individual.Si_30 == 1.01E-2
+
+    individual.set_metallicity(0.004)
+    assert individual.O_16 == 7.96
+    assert individual.Ca_40 == 2.83E-2
+
+    individual.set_metallicity(0.02)
+    assert individual.B_11 == 3.22E-14
+    assert individual.Al_27 == 8.30E-2
+
+def test_kobayashi_hn_20():
+    individual = yields_base.Yields("kobayashi_06_II_20_hn")
+
+    assert individual.mass_cuts[0] == 1.88
+    assert individual.mass_cuts[0.001] == 2.24
+    assert individual.mass_cuts[0.004] == 2.23
+    assert individual.mass_cuts[0.02] == 1.77
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.29)
+    assert individual.wind_ejecta[0.004] == pytest.approx(0.49)
+    assert individual.wind_ejecta[0.02] == pytest.approx(1.64)
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 4.76E-5
+    assert individual.B_10 == 1.95E-19
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 8.43
+    assert individual.Ne_20 == 4.56E-1
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 1.78E-3
+    assert individual.P_31 == 4.68E-4
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 9.80E-1
+    assert individual.Al_27 == 8.56E-3
+
+
+def test_kobayashi_hn_25():
+    individual = yields_base.Yields("kobayashi_06_II_25_hn")
+
+    assert individual.mass_cuts[0] == 2.80
+    assert individual.mass_cuts[0.001] == 2.15
+    assert individual.mass_cuts[0.004] == 1.97
+    assert individual.mass_cuts[0.02] == 2.09
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.55)
+    assert individual.wind_ejecta[0.004] == pytest.approx(0.98)
+    assert individual.wind_ejecta[0.02] == pytest.approx(3.37)
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.11E-4
+    assert individual.B_10 == 7.45E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 9.80
+    assert individual.Ne_20 == 1.05
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 2.27E-3
+    assert individual.P_31 == 5.29E-4
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 2.18
+    assert individual.Al_27 == 2.34E-2
+
+
+def test_kobayashi_hn_30():
+    individual = yields_base.Yields("kobayashi_06_II_30_hn")
+
+    assert individual.mass_cuts[0] == 3.27
+    assert individual.mass_cuts[0.001] == 2.57
+    assert individual.mass_cuts[0.004] == 4.05
+    assert individual.mass_cuts[0.02] == 3.05
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(0.95)
+    assert individual.wind_ejecta[0.004] == pytest.approx(2.45)
+    assert individual.wind_ejecta[0.02] == pytest.approx(5.42)
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.06E-4
+    assert individual.B_10 == 1.05E-14
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 1.11E1
+    assert individual.Ne_20 == 1.05
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 4.86E-3
+    assert individual.P_31 == 1.35E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 2.74
+    assert individual.Al_27 == 2.37E-2
+
+
+def test_kobayashi_hn_40():
+    individual = yields_base.Yields("kobayashi_06_II_40_hn")
+
+    assert individual.mass_cuts[0] == 5.53
+    assert individual.mass_cuts[0.001] == 5.52
+    assert individual.mass_cuts[0.004] == 4.51
+    assert individual.mass_cuts[0.02] == 2.67
+
+    assert individual.wind_ejecta[0] == 0
+    assert individual.wind_ejecta[0.001] == pytest.approx(2.18)
+    assert individual.wind_ejecta[0.004] == pytest.approx(7.07)
+    assert individual.wind_ejecta[0.02] == pytest.approx(18.16)
+
+    individual.set_metallicity(0)
+    assert individual.He_3 == 2.57E-5
+    assert individual.B_10 == 9.41E-15
+
+    individual.set_metallicity(0.001)
+    assert individual.H_1 == 1.29E1
+    assert individual.Ne_20 == 1.83E-1
+
+    individual.set_metallicity(0.004)
+    assert individual.Si_29 == 6.63E-3
+    assert individual.P_31 == 2.00E-3
+
+    individual.set_metallicity(0.02)
+    assert individual.O_16 == 7.05
+    assert individual.Al_27 == 7.20E-2
+
+def test_kobayashi_error_checking():
+    with pytest.raises(ValueError):
+        yields_base.Yields("kobayashi_06_II_12_hn")
+    with pytest.raises(ValueError):
+        yields_base.Yields("kobayashi_06_II_19")
+    with pytest.raises(ValueError):
+        yields_base.Yields("kobayashi_06_12")
+
+@pytest.mark.parametrize("tag", ["13", "15", "18", "20", "25", "30", "40",
+                                 "20_hn", "25_hn", "30_hn", "40_hn"])
+def test_kobayashi_mass_conservation(tag):
+    model_name = "kobayashi_06_II_{}".format(tag)
+    model = yields_base.Yields(model_name)
+
+    for z in model.metallicity_points:
+        m_cut = model.mass_cuts[z]
+        m_wind = model.wind_ejecta[z]
+        m_sn = model.total_sn_ejecta[z]
+
+        assert pytest.approx(model.mass) == m_cut + m_wind + m_sn
 
 # ----------------------------------------------------------
 

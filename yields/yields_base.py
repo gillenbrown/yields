@@ -23,6 +23,9 @@ nomoto_ind_0_001_hn = "nomoto_individual/z_0.001_hn.txt"
 nomoto_ind_0_004_hn = "nomoto_individual/z_0.004_hn.txt"
 nomoto_ind_0_02_hn = "nomoto_individual/z_0.02_hn.txt"
 
+kobayashi_sn = "kobayashi_individual/sn_ejecta.txt"
+kobayashi_hn = "kobayashi_individual/hn_ejecta.txt"
+
 ww_ind_sol_a = "ww_individual/ww95_5a.txt"
 ww_ind_sol_b = "ww_individual/ww95_5b.txt"
 ww_ind_0_1_sol_a = "ww_individual/ww95_10a.txt"
@@ -86,6 +89,24 @@ def _parse_nomoto_individual_element(name):
             sym = name[2:]
         return "{}_{}".format(sym, num)
 
+def _parse_kobayashi_individual_element(name):
+    """
+    Take the raw value for the elements in the data file and format it nicely.
+
+    :param name: The raw value for the element
+    :type name: str
+    :return: Nicely formatted value for the element.
+    :rtype: str
+    """
+    # other than p and d, elements are in the format of ^mass_number^elt_name
+    if name == "p":
+        return "H_1"
+    elif name == "d":
+        return "H_2"
+    else:
+        # we have to know where to put the underscore
+        _, num, sym = name.split("^")
+        return "{}_{}".format(sym, num)
 
 def _parse_iwamoto_model(full_name):
     """Parses the full name to get the needed model.
@@ -171,8 +192,12 @@ class Yields(object):
         # _abundances_interp one will hold interpolation objects, that are able
         # to get the abundance at any metallicity. Then once the metallicity is
         # set, we store the abundances at that metallicity in a second dict
+        self.mass = None
         self.abundances = dict()
         self._abundances_interp = dict()
+        self.mass_cuts = dict()
+        self.total_sn_ejecta = dict()
+        self.wind_ejecta = dict()
 
         # store the model set the user is using
         self.model_set = model_set
@@ -189,6 +214,7 @@ class Yields(object):
         elif model_set == "nomoto_06_II":
             self.make_nomoto_06_II()
         elif "imf" in model_set:
+            self.mass = "IMF"
             if "nomoto" in model_set:
                 if "ave" in model_set:
                     self.make_imf_integrated(my_nomoto_ave_file)
@@ -211,10 +237,20 @@ class Yields(object):
             else:
                 mass = model_set[-2:]
                 self.make_individual_nomoto_regular(mass)
+            self.mass = float(mass)
 
         elif model_set.startswith("ww_95_II"):
             model = model_set[9:]
             self.make_individal_ww95(model)
+
+        elif model_set.startswith("kobayashi"):
+            if "hn" in model_set:
+                mass = model_set[-5:-3]
+                self.make_individual_kobayashi(mass, hn=True)
+            else:
+                mass = model_set[-2:]
+                self.make_individual_kobayashi(mass, hn=False)
+
         else:
             raise ValueError("This model is not supported. Make sure you\n" +
                              "entered it correctly.")
@@ -460,6 +496,40 @@ class Yields(object):
                                                         these_abundances)
                     self._abundances_interp[formatted_element] = interp_obj
 
+    def _read_nomoto_files_ind(self, idx, z_0_0_file, z_0_001_file,
+                               z_0_004_file, z_0_02_file):
+        # then we can iterate through the files. Each file is a given
+        # metallicity and has all mass models, we we want to iterate through
+        # all files at the same time. z_0_0 etc are all rows in the
+        # respective files.
+        for z_0_0, z_0_001, z_0_004, z_0_002 in zip(z_0_0_file.readlines(),
+                                                    z_0_001_file.readlines(),
+                                                    z_0_004_file.readlines(),
+                                                    z_0_02_file.readlines()):
+
+            elt = z_0_0.split()[0]
+            # ignore rows that don't matter
+            if elt in ["M", "E"]:
+                continue
+
+            # Get the column with the right SN in it for each file
+            items = [row.split()[idx] for row in [z_0_0, z_0_001,
+                                                  z_0_004, z_0_002]]
+
+            # then parse it appropriately
+            if elt == "Mcut":
+                for z, item in zip(self.metallicity_points, items):
+                    self.mass_cuts[z] = float(item)
+            else:  # a regular element
+                # parse the element name
+                elt = _parse_nomoto_individual_element(elt)
+
+                # then make the interpolation object
+                interp_obj = _interpolation_wrapper(self.metallicity_points,
+                                                    items)
+
+                self._abundances_interp[elt] = interp_obj
+
     def make_individual_nomoto_regular(self, mass):
         """Populates the model with the yields from the Nomoto 2006
         individual supernova values, not the IMF integrated ones."""
@@ -480,28 +550,8 @@ class Yields(object):
             raise ValueError("This model was not found:"
                              " nomoto_II_{}".format(mass))
 
-        # then we can iterate through the files. Each file is a given
-        # metallicity and has all mass models, we we want to iterate through
-        # all files at the same time
-        for z_0_0, z_0_001, z_0_004, z_0_002 in zip(z_0_0_file.readlines(),
-                                                    z_0_001_file.readlines(),
-                                                    z_0_004_file.readlines(),
-                                                    z_0_02_file.readlines()):
-            # only get the rows that matter
-            if z_0_0.split()[0] in ["M", "E", "Mcut"]:
-                continue
-
-            # get the right column from each file
-            elt = z_0_0.split()[0]
-            items = [row.split()[idx] for row in [z_0_0, z_0_001,
-                                                  z_0_004, z_0_002]]
-
-            #parse the element name
-            elt = _parse_nomoto_individual_element(elt)
-
-            # then get the interpolation object
-            interp_obj = _interpolation_wrapper(self.metallicity_points, items)
-            self._abundances_interp[elt] = interp_obj
+        self._read_nomoto_files_ind(idx, z_0_0_file, z_0_001_file,
+                                    z_0_004_file, z_0_02_file)
 
     def make_individual_nomoto_hn(self, mass):
         """Populates the model with the yields from the Nomoto 2006
@@ -524,27 +574,68 @@ class Yields(object):
             raise ValueError("This model was not found:"
                              " nomoto_II_{}_hn".format(mass))
 
-        # then we can iterate through the files. Each file is a given
-        # metallicity and has all mass models, we we want to iterate through
-        # all files at the same time
-        for z_0_0, z_0_001, z_0_004, z_0_002 in zip(z_0_0_file, z_0_001_file,
-                                                    z_0_004_file, z_0_02_file):
-            # only get the rows that matter
-            if z_0_0.split()[0] in ["M", "E", "Mcut"]:
-                continue
+        self._read_nomoto_files_ind(idx, z_0_0_file, z_0_001_file,
+                                    z_0_004_file, z_0_02_file)
 
-            # get the right column from each file
-            elt = z_0_0.split()[0]
-            items = [row.split()[idx] for row in [z_0_0, z_0_001,
-                                                  z_0_004, z_0_002]]
+    def make_individual_kobayashi(self, mass, hn):
+        """
 
-            #parse the element name
-            elt = _parse_nomoto_individual_element(elt)
+        :param mass:
+        :param hn:
+        :return:
+        """
+        self.metallicity_points = z_values_nomoto
+        self.mass = float(mass)
 
-            # then get the interpolation object
-            interp_obj = _interpolation_wrapper(self.metallicity_points,
-                                                items)
+        if hn:
+            in_file = kobayashi_hn
+            idxs = {"20": 2, "25": 3, "30": 4, "40": 5}
+        else:
+            in_file = kobayashi_sn
+            idxs = {"13": 2, "15": 3, "18": 4, "20": 5, "25": 6, "30": 7,
+                    "40": 8}
+
+        try:
+            idx = idxs[mass]
+        except KeyError:
+            raise ValueError("This model was not found:"
+                             " kobayashi_II_{}_hn".format(mass))
+
+        temp_items = {z:dict() for z in self.metallicity_points}
+
+        with open(_get_data_path(in_file), "r") as data_file:
+            for line in data_file:
+                if line.startswith("#"):
+                    continue
+
+                # otherwise we have an actual data line
+                split_line = line.split()
+                z = float(split_line[0])
+                elt = split_line[1]
+                value = float(split_line[idx])
+
+                # what we do with it depends on what the "elt" is
+                if elt == "M_cut_":
+                    self.mass_cuts[z] = value
+                elif elt == "M_final_":
+                    self.wind_ejecta[z] = self.mass - value
+
+                else:
+                    elt = _parse_kobayashi_individual_element(elt)
+                    temp_items[z][elt] = value
+
+        # then we can parse the ejected values into the appropriate format
+        for elt in temp_items[0].keys():
+            values = [temp_items[z][elt] for z in self.metallicity_points]
+            interp_obj = _interpolation_wrapper(self.metallicity_points, values)
+
             self._abundances_interp[elt] = interp_obj
+
+        for z in self.metallicity_points:
+            self.total_sn_ejecta[z] = self.mass - (self.mass_cuts[z] +
+                                                   self.wind_ejecta[z])
+
+
 
     def make_individal_ww95(self, model):
         """Populates the model with the data from the individual 
@@ -709,3 +800,6 @@ class Yields(object):
 
         self._abundances_interp["Ni_56"] = ni_56_interp
         self._abundances_interp["Fe_56"] = fe_56_interp
+
+    #TODO: handle the mass, and various ejecta variables more properly for both
+    # the WW set and the IMF integrated set.

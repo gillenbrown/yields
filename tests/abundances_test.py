@@ -71,7 +71,7 @@ def test_solar_fractions():
     abund = abundances.Abundances()  # values irrelevant
     assert 0.015 < abund.Z_sun < 0.02
 
-    metal_fracs_sum = np.sum(abund.solar_metal_fractions.values())
+    metal_fracs_sum = sum(abund.solar_metal_fractions.values())
     metal_fracs_sum -= abund.solar_metal_fractions["H"]
     metal_fracs_sum -= abund.solar_metal_fractions["He"]
     assert np.isclose(metal_fracs_sum, 1)
