@@ -202,7 +202,7 @@ class Yields(object):
         self.abundances = dict()
         self._abundances_interp = dict()
         self.mass_cuts = dict()
-        self.total_sn_ejecta = dict()
+        self.total_end_ejecta = dict()
         self.wind_ejecta = dict()
 
         # store the model set the user is using
@@ -670,8 +670,8 @@ class Yields(object):
 
         # finally we can set the ejected mass by using the other values.
         for z in self.metallicity_points:
-            self.total_sn_ejecta[z] = self.mass - (self.mass_cuts[z] +
-                                                   self.wind_ejecta[z])
+            self.total_end_ejecta[z] = self.mass - (self.mass_cuts[z] +
+                                                    self.wind_ejecta[z])
 
 
     def make_individal_ww95(self, model):
@@ -872,6 +872,9 @@ class Yields(object):
             # format the name before puttting in the interpolation object
             iso_name = isotope.replace("-", "_")
             self._abundances_interp[iso_name] = interp_obj
+
+        for z in self.metallicity_points:
+            self.total_end_ejecta[z] = self.ejecta_sum(metal_only=False)
 
     def make_nomoto_18_Ia(self):
         """

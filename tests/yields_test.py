@@ -855,7 +855,7 @@ def test_kobayashi_mass_conservation(tag, z):
             # use the sums we already created to make this easier.
             ejecta_sum += model.abundances[isotope]
 
-    model_ejecta_sum = model.total_sn_ejecta[z]
+    model_ejecta_sum = model.total_end_ejecta[z]
     # have tolerance of two decimal places, since that's all the mass cut
     # and m_final are reported to. The actual tests don't pass, indicating that
     # the tables are a little untrustworthy
