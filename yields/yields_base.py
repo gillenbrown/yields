@@ -212,6 +212,9 @@ class Yields(object):
         # filled in by the models when they are used
         self.metallicity_points = []
 
+        # and that the user so far has not specified a normalization
+        self.has_normalization = False
+
         # then we can initialize the model set they are using.
         if model_set == "test":
             self.make_test()
@@ -266,9 +269,6 @@ class Yields(object):
         else:
             raise ValueError("This model is not supported. Make sure you\n" +
                              "entered it correctly.")
-
-        # and that the user so far has not specified a normalization
-        self.has_normalization = False
 
         # fix the WW 95 iron thing
         if "ww_95" in model_set:
@@ -874,6 +874,7 @@ class Yields(object):
             self._abundances_interp[iso_name] = interp_obj
 
         for z in self.metallicity_points:
+            self.set_metallicity(z)
             self.total_end_ejecta[z] = self.ejecta_sum(metal_only=False)
 
     def make_nomoto_18_Ia(self):

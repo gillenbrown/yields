@@ -1282,189 +1282,237 @@ def test_ww_error_checking():
 
 # ----------------------------------------------------------
 def test_nugrid_1():
-    individual = yields_base.Yields("nugrid_1")
+    agb = yields_base.Yields("nugrid_1")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 4.232E-03
-    assert individual.Ca_42 == 2.227E-07
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(1.0 - 0.5601, abs=1E-4)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(1.0 - 0.5593, abs=1E-4)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(1.0 - 0.5678, abs=1E-4)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(1.0 - 0.5845, abs=1E-4)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(1.0 - 0.5296, abs=1E-4)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 2.122E-03
-    assert individual.Ar_40 == 5.840E-09
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 4.232E-03
+    assert agb.Ca_42 == 2.227E-07
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 3.430E-05
-    assert individual.C_12 == 2.658E-04
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 2.122E-03
+    assert agb.Ar_40 == 5.840E-09
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 4.702E-10
-    assert individual.N_14 == 1.983E-05
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 3.430E-05
+    assert agb.C_12 == 2.658E-04
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 8.253E-03
-    assert individual.Mg_26 == 1.321E-07
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 4.702E-10
+    assert agb.N_14 == 1.983E-05
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 8.253E-03
+    assert agb.Mg_26 == 1.321E-07
 
 def test_nugrid_1_65():
-    individual = yields_base.Yields("nugrid_1.65")
+    agb = yields_base.Yields("nugrid_1.65")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 9.983E-03
-    assert individual.Ca_42 == 5.111E-07
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(1.65 - 0.6501, abs=1E-3)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(1.65 - 0.6207, abs=1E-4)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(1.65 - 0.6140, abs=1E-4)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(1.65 - 0.6169, abs=1E-4)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(1.65 - 0.6182, abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 5.892E-03
-    assert individual.Ar_40 == 1.404E-08
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 9.983E-03
+    assert agb.Ca_42 == 5.111E-07
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 8.159E-05
-    assert individual.C_12 == 7.696E-03
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 5.892E-03
+    assert agb.Ar_40 == 1.404E-08
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 1.503E-09
-    assert individual.N_14 == 1.036E-04
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 8.159E-05
+    assert agb.C_12 == 7.696E-03
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 2.147E-02
-    assert individual.Mg_26 == 3.536E-05
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 1.503E-09
+    assert agb.N_14 == 1.036E-04
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 2.147E-02
+    assert agb.Mg_26 == 3.536E-05
 
 def test_nugrid_2():
-    individual = yields_base.Yields("nugrid_2")
+    agb = yields_base.Yields("nugrid_2")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 1.904E-02
-    assert individual.Ca_42 == 7.698E-07
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(2.0 - 0.6201, abs=1E-4)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(2.0 - 0.6118, abs=1E-4)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(2.0 - 0.6176, abs=1E-4)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(2.0 - 0.6352, abs=1E-4)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(2.0 - 0.6648, abs=1E-4)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 1.385E-02
-    assert individual.Ar_40 == 2.554E-08
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 1.904E-02
+    assert agb.Ca_42 == 7.698E-07
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 1.081E-04
-    assert individual.C_12 == 1.783E-02
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 1.385E-02
+    assert agb.Ar_40 == 2.554E-08
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 2.349E-09
-    assert individual.N_14 == 1.710E-04
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 1.081E-04
+    assert agb.C_12 == 1.783E-02
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 2.356E-02
-    assert individual.Mg_26 == 6.155E-05
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 2.349E-09
+    assert agb.N_14 == 1.710E-04
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 2.356E-02
+    assert agb.Mg_26 == 6.155E-05
 
 def test_nugrid_3():
-    individual = yields_base.Yields("nugrid_3")
+    agb = yields_base.Yields("nugrid_3")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 3.594E-02
-    assert individual.Ca_42 == 1.389E-06
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(3.0 - 0.6420, abs=1E-4)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(3.0 - 0.6593, abs=1E-3)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(3.0 - 0.7097, abs=1E-3)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(3.0 - 0.8242, abs=1E-3)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(3.0 - 0.8521, abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 2.228E-02
-    assert individual.Ar_40 == 6.248E-08
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 3.594E-02
+    assert agb.Ca_42 == 1.389E-06
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 1.796E-04
-    assert individual.C_12 == 1.852E-02
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 2.228E-02
+    assert agb.Ar_40 == 6.248E-08
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 2.629E-09
-    assert individual.N_14 == 2.212E-04
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 1.796E-04
+    assert agb.C_12 == 1.852E-02
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 8.857E-03
-    assert individual.Mg_26 == 2.716E-05
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 2.629E-09
+    assert agb.N_14 == 2.212E-04
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 8.857E-03
+    assert agb.Mg_26 == 2.716E-05
 
 def test_nugrid_4():
-    individual = yields_base.Yields("nugrid_4")
+    agb = yields_base.Yields("nugrid_4")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 3.833E-02
-    assert individual.Ca_42 == 1.794E-06
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(4.0 - 0.8180, abs=1E-4)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(4.0 - 0.8415, abs=1E-3)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(4.0 - 0.8611, abs=1E-3)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(4.0 - 0.8936, abs=1E-3)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(4.0 - 0.9045, abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 1.977E-02
-    assert individual.Ar_40 == 1.142E-07
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 3.833E-02
+    assert agb.Ca_42 == 1.794E-06
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 2.479E-04
-    assert individual.C_12 == 9.032E-03
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 1.977E-02
+    assert agb.Ar_40 == 1.142E-07
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 3.753E-09
-    assert individual.N_14 == 7.812E-03
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 2.479E-04
+    assert agb.C_12 == 9.032E-03
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 1.755E-03
-    assert individual.Mg_26 == 7.790E-05
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 3.753E-09
+    assert agb.N_14 == 7.812E-03
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 1.755E-03
+    assert agb.Mg_26 == 7.790E-05
 
 def test_nugrid_5():
-    individual = yields_base.Yields("nugrid_5")
+    agb = yields_base.Yields("nugrid_5")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 3.911E-02
-    assert individual.Ca_42 == 2.195E-06
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(5.0 - 0.8768, abs=1E-3)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(5.0 - 0.9101, abs=1E-3)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(5.0 - 0.9533, abs=1E-4)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(5.0 - 0.9855, abs=1E-3)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(5.0 - 0.9917, abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 1.994E-02
-    assert individual.Ar_40 == 1.048E-07
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 3.911E-02
+    assert agb.Ca_42 == 2.195E-06
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 3.209E-04
-    assert individual.C_12 == 7.953E-04
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 1.994E-02
+    assert agb.Ar_40 == 1.048E-07
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 4.533E-09
-    assert individual.N_14 == 6.323E-03
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 3.209E-04
+    assert agb.C_12 == 7.953E-04
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 6.948E-04
-    assert individual.Mg_26 == 1.413E-05
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 4.533E-09
+    assert agb.N_14 == 6.323E-03
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 6.948E-04
+    assert agb.Mg_26 == 1.413E-05
 
 def test_nugrid_6():
-    individual = yields_base.Yields("nugrid_6")
+    agb = yields_base.Yields("nugrid_6")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 3.782E-02
-    assert individual.Ca_42 == 2.592E-06
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(6.0 - 0.9653, abs=2E-4)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(6.0 - 0.9938, abs=1E-3)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(6.0 - 1.053,  abs=1E-3)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(6.0 - 1.122,  abs=1E-3)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(6.0 - 1.125,  abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 1.935E-02
-    assert individual.Ar_40 == 1.408E-07
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 3.782E-02
+    assert agb.Ca_42 == 2.592E-06
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 3.918E-04
-    assert individual.C_12 == 1.313E-03
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 1.935E-02
+    assert agb.Ar_40 == 1.408E-07
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 5.336E-09
-    assert individual.N_14 == 5.149E-03
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 3.918E-04
+    assert agb.C_12 == 1.313E-03
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 2.315E-04
-    assert individual.Mg_26 == 3.306E-06
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 5.336E-09
+    assert agb.N_14 == 5.149E-03
+
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 2.315E-04
+    assert agb.Mg_26 == 3.306E-06
 
 def test_nugrid_7():
-    individual = yields_base.Yields("nugrid_7")
+    agb = yields_base.Yields("nugrid_7")
 
-    individual.set_metallicity(0.02)
-    assert individual.O_16 == 4.183E-02
-    assert individual.Ca_42 == 3.044E-06
+    assert agb.total_end_ejecta[0.02]   == pytest.approx(7.0 - 1.066, abs=1E-3)
+    assert agb.total_end_ejecta[0.01]   == pytest.approx(7.0 - 1.114, abs=1E-3)
+    assert agb.total_end_ejecta[0.006]  == pytest.approx(7.0 - 1.164, abs=1E-3)
+    assert agb.total_end_ejecta[0.001]  == pytest.approx(7.0 - 1.259, abs=1E-3)
+    assert agb.total_end_ejecta[0.0001] == pytest.approx(7.0 - 1.272, abs=1E-3)
 
-    individual.set_metallicity(0.01)
-    assert individual.O_16 == 1.817E-02
-    assert individual.Ar_40 == 1.124E-07
+    agb.set_metallicity(0.02)
+    assert agb.O_16 == 4.183E-02
+    assert agb.Ca_42 == 3.044E-06
 
-    individual.set_metallicity(0.006)
-    assert individual.Fe_56 == 4.627E-04
-    assert individual.C_12 == 9.541E-04
+    agb.set_metallicity(0.01)
+    assert agb.O_16 == 1.817E-02
+    assert agb.Ar_40 == 1.124E-07
 
-    individual.set_metallicity(0.001)
-    assert individual.Ca_43 == 6.258E-09
-    assert individual.N_14 == 7.913E-03
+    agb.set_metallicity(0.006)
+    assert agb.Fe_56 == 4.627E-04
+    assert agb.C_12 == 9.541E-04
+
+    agb.set_metallicity(0.001)
+    assert agb.Ca_43 == 6.258E-09
+    assert agb.N_14 == 7.913E-03
 
 
-    individual.set_metallicity(0.0001)
-    assert individual.C_12 == 1.421E-03
-    assert individual.Mg_26 == 3.802E-06
+    agb.set_metallicity(0.0001)
+    assert agb.C_12 == 1.421E-03
+    assert agb.Mg_26 == 3.802E-06
 
 # ----------------------------------------------------------
 
