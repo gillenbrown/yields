@@ -847,19 +847,12 @@ def test_kobayashi_mass_conservation(tag, z):
     model = yields_base.Yields(model_name)
     model.set_metallicity(z)
 
-    ejecta_sum = 0
-    for isotope in model.abundances:
-        # abundances has isotopes and the sum of those isotopes into
-        # elements. To avoid double counting we only want the elements
-        if "_" not in isotope:
-            # use the sums we already created to make this easier.
-            ejecta_sum += model.abundances[isotope]
-
+    ejecta_sum = model.ejecta_sum(metal_only=False)
     model_ejecta_sum = model.total_end_ejecta[z]
     # have tolerance of two decimal places, since that's all the mass cut
     # and m_final are reported to. The actual tests don't pass, indicating that
     # the tables are a little untrustworthy
-    assert pytest.approx(model_ejecta_sum, abs=0.1) == ejecta_sum
+    assert pytest.approx(model_ejecta_sum, abs=0.01) == ejecta_sum
 
 # ----------------------------------------------------------
 
@@ -1513,6 +1506,15 @@ def test_nugrid_7():
     agb.set_metallicity(0.0001)
     assert agb.C_12 == 1.421E-03
     assert agb.Mg_26 == 3.802E-06
+
+@pytest.mark.parametrize("m", ["1", "1.65", "2", "3", "4", "5", "6", "7"])
+def test_nugrid_mass_conservation(m):
+    agb = yields_base.Yields("nugrid_{}".format(m))
+    for z in agb.metallicity_points:
+        agb.set_metallicity(z)
+        total_1 = agb.total_end_ejecta[z]
+        total_2 = agb.ejecta_sum(metal_only=False)
+        assert total_1 == pytest.approx(total_2, rel=1E-3)
 
 # ----------------------------------------------------------
 
