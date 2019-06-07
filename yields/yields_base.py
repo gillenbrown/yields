@@ -204,6 +204,7 @@ class Yields(object):
         self.mass_cuts = dict()
         self.total_end_ejecta = dict()
         self.wind_ejecta = dict()
+        self.energy_erg = dict()  # enegy ejected by SN (used by Kobayashi 13)
 
         # store the model set the user is using
         self.model_set = model_set
@@ -633,6 +634,17 @@ class Yields(object):
         except KeyError:
             raise ValueError("This model was not found:"
                              " kobayashi_II_{}_hn".format(mass))
+
+        # Set the energies
+        if hn:
+            energies = {"20": 10E51, "25": 10E51, "30": 20E51, "40": 30E51}
+            for z in self.metallicity_points:
+                self.energy_erg[z] = energies[mass]
+        else:
+            # all models have 1E51 ergs of energy
+            for z in self.metallicity_points:
+                self.energy_erg[z] = 1E51
+
 
         # create temporary dictionary for reading the file, due to
         # its unhelpful format.

@@ -609,6 +609,9 @@ def test_individual_kobayashi_mass_13():
     assert individual.wind_ejecta[0.004] == pytest.approx(0.14)
     assert individual.wind_ejecta[0.02] == pytest.approx(0.27)
 
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E51)
+
     individual.set_metallicity(0)
     assert individual.O_18 == 5.79E-8
     assert individual.Ga_71 == 8.53E-15
@@ -637,6 +640,9 @@ def test_individual_kobayashi_mass_18():
     assert individual.wind_ejecta[0.001] == pytest.approx(0.16)
     assert individual.wind_ejecta[0.004] == pytest.approx(1.41)
     assert individual.wind_ejecta[0.02] == pytest.approx(1.24)
+
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E51)
 
     individual.set_metallicity(0)
     assert individual.O_18 == 4.63E-6
@@ -667,6 +673,9 @@ def test_individual_kobayashi_mass_25():
     assert individual.wind_ejecta[0.004] == pytest.approx(0.97)
     assert individual.wind_ejecta[0.02] == pytest.approx(3.37)
 
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E51)
+
     individual.set_metallicity(0)
     assert individual.O_18 == 6.75E-7
     assert individual.Ga_71 == 2.24E-13
@@ -696,6 +705,9 @@ def test_individual_kobayashi_mass_40():
     assert individual.wind_ejecta[0.004] == pytest.approx(7.07)
     assert individual.wind_ejecta[0.02] == pytest.approx(18.17)
 
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E51)
+
     individual.set_metallicity(0)
     assert individual.O_18 == 2.13E-7
     assert individual.Ga_71 == 1.36E-15
@@ -724,6 +736,9 @@ def test_kobayashi_hn_20():
     assert individual.wind_ejecta[0.001] == pytest.approx(0.29)
     assert individual.wind_ejecta[0.004] == pytest.approx(0.49)
     assert individual.wind_ejecta[0.02] == pytest.approx(1.64)
+
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E52)
 
     individual.set_metallicity(0)
     assert individual.He_3 == 4.76E-5
@@ -755,6 +770,9 @@ def test_kobayashi_hn_25():
     assert individual.wind_ejecta[0.004] == pytest.approx(0.98)
     assert individual.wind_ejecta[0.02] == pytest.approx(3.37)
 
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(1E52)
+
     individual.set_metallicity(0)
     assert individual.He_3 == 2.11E-4
     assert individual.B_10 == 7.45E-14
@@ -785,6 +803,9 @@ def test_kobayashi_hn_30():
     assert individual.wind_ejecta[0.004] == pytest.approx(2.45)
     assert individual.wind_ejecta[0.02] == pytest.approx(5.42)
 
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(2E52)
+
     individual.set_metallicity(0)
     assert individual.He_3 == 2.06E-4
     assert individual.B_10 == 1.05E-14
@@ -814,6 +835,9 @@ def test_kobayashi_hn_40():
     assert individual.wind_ejecta[0.001] == pytest.approx(2.18)
     assert individual.wind_ejecta[0.004] == pytest.approx(7.07)
     assert individual.wind_ejecta[0.02] == pytest.approx(18.16)
+
+    for z in [0, 0.001, 0.004, 0.02]:
+        assert individual.energy_erg[z] == pytest.approx(3E52)
 
     individual.set_metallicity(0)
     assert individual.He_3 == 2.57E-5
@@ -1532,6 +1556,19 @@ def test_nomoto_Ia_w7():
     assert individual.O_16 == 5.0E-2
     assert individual.O_17 == 4.6E-6
     assert individual.O_18 == 1.43E-7
+    assert individual.Mg_24 == 4.61E-3
+    assert individual.Mg_25 == 1.19E-4
+    assert individual.Mg_26 == 7.64E-5
+    assert individual.S_32 == 7.90E-2
+    assert individual.S_33 == 4.70E-4
+    assert individual.S_34 == 2.38E-3
+    assert individual.S_36 == 2.86E-7
+    assert individual.Ca_40 == 9.67E-3
+    assert individual.Ca_42 == 2.88E-5
+    assert individual.Ca_43 == 1.46E-7
+    assert individual.Ca_44 == 9.90E-7
+    assert individual.Ca_46 == 3.50E-10
+    assert individual.Ca_48 == 2.20E-12
     assert individual.Fe_54 == 0.131
     assert individual.Fe_56 == 0.741
     assert individual.Fe_57 == 2.7E-2
@@ -1547,6 +1584,19 @@ def test_nomoto_Ia_w7():
     assert individual.O_16 == 9.95E-2
     assert individual.O_17 == 1.32E-11
     assert individual.O_18 == 7.60E-13
+    assert individual.Mg_24 == 8.68E-3
+    assert individual.Mg_25 == 2.49E-6
+    assert individual.Mg_26 == 1.26E-6
+    assert individual.S_32 == 7.65E-2
+    assert individual.S_33 == 1.18E-4
+    assert individual.S_34 == 1.14E-4
+    assert individual.S_36 == 6.88E-10
+    assert individual.Ca_40 == 1.42E-2
+    assert individual.Ca_42 == 1.64E-6
+    assert individual.Ca_43 == 5.76E-9
+    assert individual.Ca_44 == 1.5E-6
+    assert individual.Ca_46 == 4.15E-11
+    assert individual.Ca_48 == 1.99E-12
     assert individual.Fe_54 == 0.18
     assert individual.Fe_56 == 0.683
     assert individual.Fe_57 == 1.85E-2
