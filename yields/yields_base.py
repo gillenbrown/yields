@@ -904,7 +904,7 @@ class Yields(object):
                     continue
                 # the data is just three values: element, then yields at the
                 # two metallicities
-                elt, val_subsolar, val_solar = row.split()
+                elt, val_solar, val_subsolar = row.split()
                 elt = _parse_nomoto_individual_element(elt)
 
                 # then make the interpolation object
